@@ -1,3 +1,6 @@
 [submodule "data_raw/fcre-manual-data"]
 	path = data_raw/fcre-manual-data
 	url = https://github.com/tadhg-moore/fcre-manual-data.git
+[submodule "data_raw/fcre-weir-data"]
+	path = data_raw/fcre-weir-data
+	url = https://github.com/tadhg-moore/fcre-weir-data.git
