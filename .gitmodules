@@ -4,3 +4,6 @@
 [submodule "data_raw/fcre-weir-data"]
 	path = data_raw/fcre-weir-data
 	url = https://github.com/tadhg-moore/fcre-weir-data.git
+[submodule "data_raw/fcre-catwalk-data"]
+	path = data_raw/fcre-catwalk-data
+	url = https://github.com/tadhg-moore/fcre-catwalk-data.git
