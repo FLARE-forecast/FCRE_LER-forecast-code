@@ -8,7 +8,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
                          lake_name_code,
                          config){
 
-  print("QAQC Catwalk")
+  message("QAQC Catwalk")
 
   d <- temp_oxy_chla_qaqc(realtime_file = insitu_obs_fname[1],
                           qaqc_file = insitu_obs_fname[2],
@@ -19,7 +19,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
   if(exists("ctd_fname")){
     if(!is.na(ctd_fname)){
-      print("QAQC CTD")
+      message("QAQC CTD")
       d_ctd <- extract_CTD(fname = ctd_fname,
                            input_file_tz = "EST",
                            focal_depths = config$focal_depths,
@@ -31,7 +31,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
   if(exists("nutrients_fname")){
     if(!is.na(nutrients_fname)){
-      print("QAQC Nutrients")
+      message("QAQC Nutrients")
       d_nutrients <- extract_nutrients(fname = nutrients_fname,
                                        input_file_tz = "EST",
                                        focal_depths = config$focal_depths)
@@ -42,7 +42,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
   if(exists("ch4_fname")){
     if(!is.na(ch4_fname)){
-      print("QAQC CH4")
+      message("QAQC CH4")
       d_ch4 <- extract_ch4(fname = ch4_fname,
                            input_file_tz = "EST",
                            focal_depths = config$focal_depths)
@@ -61,7 +61,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
 
   for(i in 1:length(config$target_variable)){
-    print(paste0("Extracting ",config$target_variable[i]))
+    message(paste0("Extracting ",config$target_variable[i]))
     #depth_breaks <- sort(c(bins1, bins2))
     time_breaks <- seq(first_day, last_day, by = config$averaging_period[i])
 
