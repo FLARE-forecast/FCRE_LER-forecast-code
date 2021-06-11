@@ -8,7 +8,7 @@ manager_plot <- function(file_name,
 
   png_file_name <- paste0(tools::file_path_sans_ext(file_name),"_turnover.png")
 
-  print(qaqc_data_directory)
+  # print(qaqc_data_directory)
   output <- FLAREr::combine_forecast_observations(file_name,
                                                   qaqc_data_directory,
                                                  extra_historical_days = 5)
@@ -60,7 +60,7 @@ manager_plot <- function(file_name,
   axis(1, at=full_time_local - lubridate::hours(lubridate::hour(full_time_local[1])),las=2, cex.axis=0.7, tck=-0.01,labels=FALSE)
   abline(v = full_time_local[forecast_index])
   text(full_time_local[forecast_index] - lubridate::days(2),80,'past')
-  text(full_time_local[4],80,'future')
+  text(full_time_local[forecast_index + 6],80,'future')
 
   }
   #HISTORICAL AND FUTURE TEMPERATURE
@@ -130,17 +130,17 @@ manager_plot <- function(file_name,
 
 
   full_time_local_plotting <-seq(full_time_local[1] - lubridate::days(5), max(full_time_local), by = "1 day")
-  forecast_index <- which(full_time_local_plotting == full_time_local[which.max(forecast == 0)])
+  forecast_index2 <- which(full_time_local_plotting == full_time_local[forecast_index])
 
   plot(full_time_local_plotting,rep(-99,length(full_time_local_plotting)),ylim=c(-5,35),xlim = c(full_time_local_plotting[1] - lubridate::days(2), max(full_time_local_plotting)), xlab = 'date',ylab = expression(~degree~C))
   title(paste0('Water temperature forecast'),cex.main=0.9)
-  tmp_day <- full_time_local[-1][1]
+  tmp_day <- full_time_local[forecast_index][1]
   axis(1, at=full_time_local - lubridate::hours(lubridate::hour(full_time_local[1])),las=2, cex.axis=0.7, tck=-0.01,labels=FALSE)
   depth_colors_index = 0
   for(i in 1:length(depths)){
     if(length(which(depths[i]  == depths)) >= 1 ){
       depth_colors_index <- i
-      points(full_time_local_plotting[1:forecast_index], obs[1:forecast_index,i,1],type='l',col=depth_colors[depth_colors_index],lwd=1.5)
+      points(full_time_local_plotting[1:forecast_index2], obs[1:forecast_index2,i,1],type='l',col=depth_colors[depth_colors_index],lwd=1.5)
       index <- which(focal_depths == depths[i])
       if(length(index) == 1){
         temp_means <- rep(NA, length(full_time_local))
@@ -159,9 +159,9 @@ manager_plot <- function(file_name,
     }
   }
 
-  abline(v = full_time_local[which.max(forecast == 0)])
+  abline(v = full_time_local[forecast_index])
   text(full_time_local_plotting[forecast_index-2],30,'past')
-  text(full_time_local[4],30.1,'future')
+  text(full_time_local[forecast_index + 4],30.1,'future')
 
   legend("left",c("0.1m","1m", "2m", "3m", "4m", "5m", "6m", "7m","8m", "9m"),
          text.col=c("firebrick4", "firebrick1", "DarkOrange1", "gold", "greenyellow", "medium sea green", "sea green",
