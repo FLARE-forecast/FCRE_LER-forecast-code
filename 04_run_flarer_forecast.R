@@ -1,15 +1,25 @@
 #Note: lake_directory and update_run_config need to be set prior to running this script
 
-if(!exist(lake_directory)){
+update_run_config <- FALSE
+if(!exists("lake_directory")){
   stop("Missing lake_directory variable")
 }
 
-if(!exist(update_run_config)){
+if(!exists("update_run_config")){
   stop("Missing update_run_config variable")
 }
 
 config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_flare.yml"))
-run_config <- yaml::read_yaml(config$file_path$run_config)
+run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
+
+# Set working directories for your system
+config$file_path$noaa_directory <- file.path(lake_directory, "forecasted_drivers", config$met$forecast_met_model)
+config$file_path$inflow_directory <- file.path(lake_directory, "forecasted_drivers", config$inflow$forecast_inflow_model)
+config$file_path$configuration_directory <- file.path(lake_directory, "configuration")
+config$file_path$execute_directory <- file.path(lake_directory, "flare_tempdir")
+config$file_path$forecast_output_directory <- file.path(lake_directory, "forecast_output")
+config$file_path$qaqc_data_directory <- file.path(lake_directory, "data_processed")
+config$file_path$run_config <- file.path(lake_directory, "configuration", "flarer/configure_run.yml")
 
 config$run_config <- run_config
 # Set up timings
@@ -24,7 +34,7 @@ if(is.na(config$run_config$forecast_start_datetime)){
 }
 forecast_hour <- lubridate::hour(forecast_start_datetime)
 if(forecast_hour < 10){forecast_hour <- paste0("0",forecast_hour)}
-noaa_forecast_path <- file.path(config$file_path$noaa_directory, config$met$forecast_met_model,config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
+noaa_forecast_path <- file.path(config$file_path$noaa_directory,config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
 
 
 forecast_files <- list.files(noaa_forecast_path, full.names = TRUE)
@@ -41,22 +51,18 @@ if(length(forecast_files) > 0){
   obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$obs_config_file), col_types = readr::cols())
   states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$states_config_file), col_types = readr::cols())
 
-
-  #Download and process observations (already done)
-
   cleaned_observations_file_long <- file.path(config$file_path$qaqc_data_directory,"observations_postQAQC_long.csv")
   cleaned_inflow_file <- file.path(config$file_path$qaqc_data_directory, "/inflow_postQAQC.csv")
   observed_met_file <- file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc")
+
+  # Met files for running GLM
 
   met_out <- FLAREr::generate_glm_met_files(obs_met_file = observed_met_file,
                                             out_dir = config$file_path$execute_directory,
                                             forecast_dir = noaa_forecast_path,
                                             config = config)
 
-  met_file_names <- met_out$met_file_names
-  historical_met_error <- met_out$historical_met_error
-
-  #Inflow Drivers (already done)
+  # Inflow Drivers for GLM
 
   inflow_forecast_path <- file.path(config$file_path$inflow_directory, config$inflow$forecast_inflow_model,config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
 
@@ -65,9 +71,6 @@ if(length(forecast_files) > 0){
                                                                   working_directory = config$file_path$execute_directory,
                                                                   config = config,
                                                                   state_names = states_config$state_names)
-
-  inflow_file_names <- inflow_outflow_files$inflow_file_name
-  outflow_file_names <- inflow_outflow_files$outflow_file_name
 
   #Create observation matrix
   obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long,
@@ -94,8 +97,8 @@ if(length(forecast_files) > 0){
                                        model_sd = model_sd,
                                        working_directory = config$file_path$execute_directory,
                                        met_file_names = met_out$filenames,
-                                       inflow_file_names = inflow_file_names,
-                                       outflow_file_names = outflow_file_names,
+                                       inflow_file_names = inflow_outflow_files$inflow_file_names,
+                                       outflow_file_names = inflow_outflow_files$outflow_file_names,
                                        config = config,
                                        pars_config = pars_config,
                                        states_config = states_config,
@@ -106,7 +109,7 @@ if(length(forecast_files) > 0){
 
   # Save forecast
   saved_file <- FLAREr::write_forecast_netcdf(da_output,
-                                              forecast_location = config$file_path$forecast_output_directory)
+                                              forecast_output_directory = config$file_path$forecast_output_directory)
 
   #Create EML Metadata
   FLAREr::create_flare_metadata(file_name = saved_file,
