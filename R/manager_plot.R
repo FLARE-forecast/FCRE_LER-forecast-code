@@ -2,15 +2,15 @@
 
 
 manager_plot <- function(file_name,
-                         qaqc_location,
+                         qaqc_data_directory,
                          focal_depths = c(1, 5, 8)){
 
 
   png_file_name <- paste0(tools::file_path_sans_ext(file_name),"_turnover.png")
 
-  print(qaqc_location)
+  print(qaqc_data_directory)
   output <- FLAREr::combine_forecast_observations(file_name,
-                                                 qaqc_location,
+                                                  qaqc_data_directory,
                                                  extra_historical_days = 5)
   obs <- output$obs
   full_time_extended <- output$full_time_extended

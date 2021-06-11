@@ -64,6 +64,8 @@ if(length(forecast_files) > 0){
 
   # Inflow Drivers for GLM
 
+  if(config$model_settings$model_name == "glm"){
+
   inflow_forecast_path <- file.path(config$file_path$inflow_directory, config$inflow$forecast_inflow_model,config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
 
   inflow_outflow_files <- FLAREr::create_glm_inflow_outflow_files(inflow_file_dir = inflow_forecast_path,
@@ -71,6 +73,35 @@ if(length(forecast_files) > 0){
                                                                   working_directory = config$file_path$execute_directory,
                                                                   config = config,
                                                                   state_names = states_config$state_names)
+
+  inflow_file_names <- inflow_outflow_files$inflow_file_name
+  outflow_file_names <- inflow_outflow_files$outflow_file_name
+
+  management <- NULL
+
+  }else if(config$model_settings$model_name == "glm_aed"){
+    file.copy(file.path(config_obs$data_location, "manual-data/FCR_weir_inflow_2013_2019_20200828_allfractions_2poolsDOC.csv"),
+              file.path(config$file_path$execute_directory, "FCR_weir_inflow_2013_2019_20200624_allfractions_2poolsDOC.csv"))
+
+    file.copy(file.path(config_obs$data_location, "manual-data/FCR_wetland_inflow_2013_2019_20200828_allfractions_2DOCpools.csv"),
+              file.path(config$file_path$execute_directory, "FCR_wetland_inflow_2013_2019_20200713_allfractions_2DOCpools.csv"))
+
+    file.copy(file.path(config_obs$data_location, "manual-data/FCR_SSS_inflow_2013_2019_20200701_allfractions_2DOCpools.csv"),
+              file.path(config$file_path$execute_directory, "FCR_SSS_inflow_2013_2019_20200701_allfractions_2DOCpools.csv"))
+
+    file.copy(file.path(config_obs$data_location, "manual-data/FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv"),
+              file.path(config$file_path$execute_directory, "FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv"))
+
+    file1 <- file.path(config$file_path$execute_directory, "FCR_weir_inflow_2013_2019_20200624_allfractions_2poolsDOC.csv")
+    file2 <- file.path(config$file_path$execute_directory, "FCR_wetland_inflow_2013_2019_20200713_allfractions_2DOCpools.csv")
+    inflow_file_names <- tibble(file1 = file1,
+                                file2 = file2,
+                                file3 = "sss_inflow.csv")
+    outflow_file_names <- tibble(file_1 = file.path(config$file_path$execute_directory, "FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv"),
+                                 file_2 = "sss_outflow.csv")
+
+    management <- FLAREr::generate_oxygen_management(config = config)
+  }
 
   #Create observation matrix
   obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long,
@@ -89,7 +120,7 @@ if(length(forecast_files) > 0){
                                               restart_file = config$run_config$restart_file,
                                               historical_met_error = met_out$historical_met_error)
   #Run EnKF
-  da_output <- FLAREr::run_da_forecast(states_init = init$states,
+  da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
                                        pars_init = init$pars,
                                        aux_states_init = init$aux_states_init,
                                        obs = obs,
@@ -103,24 +134,23 @@ if(length(forecast_files) > 0){
                                        pars_config = pars_config,
                                        states_config = states_config,
                                        obs_config = obs_config,
-                                       management = NULL,
+                                       management,
                                        da_method = config$da_setup$da_method,
                                        par_fit_method = config$da_setup$par_fit_method)
 
   # Save forecast
-  saved_file <- FLAREr::write_forecast_netcdf(da_output,
+  saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
                                               forecast_output_directory = config$file_path$forecast_output_directory)
 
   #Create EML Metadata
   FLAREr::create_flare_metadata(file_name = saved_file,
-                                da_output)
+                                da_forecast_output = da_forecast_output)
 
-  #files <- list.files(config$file_path$execute_directory, full.names = TRUE)
-  #unlist(config$$execute_location, recursive = TRUE)
+  #Clean up temp files and large objects in memory
+  unlist(config$file_path$execute_directory, recursive = TRUE)
 
-  #sapply(files, unlist, recursive = TRUE)
-
-  #unlist(config$file_path$execute_directory,recursive = TRUE)
+  rm(da_output)
+  gc()
 
   if(update_run_config){
     run_config$start_datetime <- run_config$forecast_start_datetime
