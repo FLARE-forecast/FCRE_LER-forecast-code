@@ -1,4 +1,4 @@
-config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr",configuration_file))
+config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr", "configure_flare.yml"))
 run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
 
 # Set working directories for your system
