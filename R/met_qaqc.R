@@ -35,56 +35,20 @@ met_qaqc <- function(realtime_file,
     d1$TIMESTAMP <- lubridate::with_tz(TIMESTAMP_in,tz = "UTC")
 
     d2 <- readr::read_csv(qaqc_file,
-                          col_types = list(Reservoir = readr::col_character(),
-                                           Site  = readr::col_character(),
-                                           DateTime = readr::col_datetime(format = ""),
-                                           Record = readr::col_integer(),
-                                           CR3000_Batt_V = readr::col_double(),
-                                           CR3000Panel_temp_C  = readr::col_double(),
-                                           PAR_Average_umol_s_m2  = readr::col_double(),
-                                           PAR_Total_mmol_m2  = readr::col_double(),
-                                           BP_Average_kPa  = readr::col_double(),
-                                           AirTemp_Average_C  = readr::col_double(),
-                                           RH_percent  = readr::col_double(),
-                                           Rain_Total_mm  = readr::col_double(),
-                                           WindSpeed_Average_m_s  = readr::col_double(),
-                                           WindDir_degrees  = readr::col_double(),
-                                           ShortwaveRadiationUp_Average_W_m2  = readr::col_double(),
-                                           ShortwaveRadiationDown_Average_W_m2  = readr::col_double(),
-                                           InfaredRadiationUp_Average_W_m2  = readr::col_double(),
-                                           InfaredRadiationDown_Average_W_m2  = readr::col_double(),
-                                           Albedo_Average_W_m2  = readr::col_double(),
-                                           Flag_PAR_Average_umol_s_m2 = readr::col_integer(),
-                                           Note_PAR_Average_umol_s_m2  = readr::col_character(),
-                                           Flag_PAR_Total_mmol_m2 = readr::col_integer(),
-                                           Note_PAR_Total_mmol_m2  = readr::col_character(),
-                                           Flag_BP_Average_kPa = readr::col_integer(),
-                                           Note_BP_Average_kPa  = readr::col_character(),
-                                           Flag_AirTemp_Average_C = readr::col_integer(),
-                                           Note_AirTemp_Average_C  = readr::col_character(),
-                                           Flag_RH_percent = readr::col_integer(),
-                                           Note_RH_percent  = readr::col_character(),
-                                           Flag_Rain_Total_mm = readr::col_integer(),
-                                           Note_Rain_Total_mm  = readr::col_character(),
-                                           Flag_WindSpeed_Average_m_s = readr::col_integer(),
-                                           Note_WindSpeed_Average_m_s  = readr::col_character(),
-                                           Flag_WindDir_degrees = readr::col_integer(),
-                                           Note_WindDir_degrees  = readr::col_character(),
-                                           Flag_ShortwaveRadiationUp_Average_W_m2 = readr::col_integer(),
-                                           Note_ShortwaveRadiationUp_Average_W_m2  = readr::col_character(),
-                                           Flag_ShortwaveRadiationDown_Average_W_m2 = readr::col_integer(),
-                                           Note_ShortwaveRadiationDown_Average_W_m2  = readr::col_character(),
-                                           Flag_InfaredRadiationUp_Average_W_m2 = readr::col_integer(),
-                                           Note_InfaredRadiationUp_Average_W_m2  = readr::col_character(),
-                                           Flag_InfaredRadiationDown_Average_W_m2 = readr::col_integer(),
-                                           Note_InfaredRadiationDown_Average_W_m2  = readr::col_character(),
-                                           Flag_Albedo_Average_W_m2 = readr::col_integer(),
-                                           Note_Albedo_Average_W_m2  = readr::col_character()))
+                          col_types = list(time = readr::col_datetime(format = ""),
+                                           ShortWave = readr::col_number(),
+                                           LongWave = readr::col_number(),
+                                           AirTemp = readr::col_number(),
+                                           RelHum = readr::col_number(),
+                                           WindSpeed = readr::col_number(),
+                                           Rain = readr::col_number())
+                          )
+    d2$pressure <- 101.8
 
 
-    TIMESTAMP_in <- lubridate::force_tz(d2$DateTime, tzone = input_file_tz)
+    TIMESTAMP_in <- lubridate::force_tz(d2$time, tzone = input_file_tz)
 
-    d2$TIMESTAMP <- lubridate::with_tz(TIMESTAMP_in,tz = "UTC")
+    d2$time <- lubridate::with_tz(TIMESTAMP_in,tz = "UTC")
 
     #d3 <- read.csv( fname[3])
     #TIMESTAMP_in <- as.POSIXct(d3$time,
@@ -95,7 +59,7 @@ met_qaqc <- function(realtime_file,
     #d3$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = local_tzone)
 
     d1 <- data.frame(time = d1$TIMESTAMP, ShortWave = d1$SR01Up_Avg, LongWave = d1$IR01UpCo_Avg, AirTemp = d1$AirTC_Avg, RelHum = d1$RH, WindSpeed = d1$WS_ms_Avg, Rain = d1$Rain_mm_Tot, pressure = d1$BP_kPa_Avg)
-    d2 <- data.frame(time = d2$TIMESTAMP, ShortWave = d2$ShortwaveRadiationUp_Average_W_m2, LongWave = d2$InfaredRadiationUp_Average_W_m2, AirTemp = d2$AirTemp_Average_C, RelHum = d2$RH_percent, WindSpeed = d2$WindSpeed_Average_m_s, Rain = d2$Rain_Total_mm, pressure = d2$BP_Average_kPa)
+    # d2 <- data.frame(time = d2$TIMESTAMP, ShortWave = d2$ShortwaveRadiationUp_Average_W_m2, LongWave = d2$InfaredRadiationUp_Average_W_m2, AirTemp = d2$AirTemp_Average_C, RelHum = d2$RH_percent, WindSpeed = d2$WindSpeed_Average_m_s, Rain = d2$Rain_Total_mm, pressure = d2$BP_Average_kPa)
 
     d1 <- d1[which(d1$time > d2$time[nrow(d2)] | d1$time < d2$time[1]), ]
 
@@ -216,7 +180,7 @@ met_qaqc <- function(realtime_file,
 
   if(!is.null(nldas)){
 
-    print("Gap filling with NLDAS")
+    message("Gap filling with NLDAS")
     d_nldas <- readr::read_csv(nldas, col_type = readr::cols())
 
     d_nldas <- d_nldas %>%
