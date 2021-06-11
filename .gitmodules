@@ -7,3 +7,6 @@
 [submodule "data_raw/fcre-catwalk-data"]
 	path = data_raw/fcre-catwalk-data
 	url = https://github.com/tadhg-moore/fcre-catwalk-data.git
+[submodule "fcre-metstation-data"]
+	path = fcre-metstation-data
+	url = https://github.com/tadhg-moore/fcre-metstation-data.git
