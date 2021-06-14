@@ -7,7 +7,7 @@ After the project has cloned, then you will need to pull in the raw data which i
 To do this you will need to open the Terminal (either within RStudio or regular terminal) and execute the command:
 
 ```
-git submodule init ; 
+git submodule init
 git submodule update
 ```
 
