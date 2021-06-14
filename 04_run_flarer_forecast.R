@@ -149,7 +149,7 @@ if(length(forecast_files) > 0){
   #Clean up temp files and large objects in memory
   unlist(config$file_path$execute_directory, recursive = TRUE)
 
-  rm(da_output)
+  rm(da_forecast_output)
   gc()
 
   if(update_run_config){
