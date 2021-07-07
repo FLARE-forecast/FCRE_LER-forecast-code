@@ -1,7 +1,9 @@
 flare_tempdir/*
 forecast_output/*
 forecasted_drivers/FLOWS-NOAAGEFS-AR1/*
+forecasted_drivers/NOAAGEFS_1hr/*
 data_processed/*
+data_raw/*
 
 # History files
 .Rhistory
