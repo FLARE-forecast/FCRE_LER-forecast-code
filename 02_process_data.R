@@ -1,5 +1,4 @@
 #Note: lake_directory need to be set prior to running this script
-
 lake_directory <- getwd()
 
 config_obs <- yaml::read_yaml(file.path(lake_directory,"configuration","observation_processing","observation_processing.yml"))
@@ -20,6 +19,7 @@ library(tidyverse)
 library(lubridate)
 
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
+files.sources <- files.sources[-grep("noaaGEFSpoint", files.sources)]
 sapply(files.sources, source)
 
 if(is.null(config_obs$met_file)){
@@ -38,8 +38,8 @@ if(is.null(config_obs$inflow1_file)){
   inflow_qaqc(realtime_file = file.path(config_obs$data_location, config_obs$inflow_raw_file1[1]),
               qaqc_file = file.path(config_obs$data_location, config_obs$inflow_raw_file1[2]),
               nutrients_file = file.path(config_obs$data_location, config_obs$nutrients_fname),
-              cleaned_inflow_file ,
-              input_file_tz = 'EST')
+              cleaned_inflow_file,
+              input_file_tz = "EST")
 }else{
   file.copy(file.path(config_obs$data_location,config_obs$inflow1_file), cleaned_inflow_file, overwrite = TRUE)
 }
