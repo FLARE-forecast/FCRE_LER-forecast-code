@@ -35,6 +35,12 @@ download.file("https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-c
               "data_raw/fcre-catwalk-data/CAT_MaintenanceLog.txt")
 download.file("https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-manual-data/Secchi_depth_2013-2019.csv",
               "data_raw/fcre-manual-data/Secchi_depth_2013-2019.csv")
+download.file("https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-manual-data/chemistry.csv",
+              "data_raw/fcre-manual-data/chemistry.csv")
+download.file("https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-manual-data/CTD_final_2013_2019.csv",
+              "data_raw/fcre-manual-data/CTD_final_2013_2019.csv")
+download.file("https://raw.githubusercontent.com/FLARE-forecast/FCRE-data/fcre-manual-data/FCR_SSS_inflow_2013_2020.csv",
+              "data_raw/fcre-manual-data/FCR_SSS_inflow_2013_2020.csv")
 
 
 # download FCR met data
@@ -57,8 +63,14 @@ download.file("https://github.com/FLARE-forecast/FCRE-data/blob/fcre-manual-data
 
 
 
-# Download NOAA Data ----
+# Download NOAA Data using noaaGEFSpoints ----
+# remotes::install_github("rqthomas/noaaGEFSpoint")
+job <- rstudioapi::jobRunScript(path = "R/noaaGEFSpoint_download.R",
+                                name = "Download NOAA",
+                                exportEnv = "R_GlobalEnv",
+                                workingDir = lake_directory)
 
+# Downloading from S3 Bucket ----
 source(file.path(lake_directory, "R", "noaa_download_s3.R"))
 
 # set a start and end date for NOAA forecasts and check which days are not available in local NOAA directory
@@ -87,7 +99,6 @@ for (i in 1:length(download_dates)) {
 }
 
 # noaa-point is 16 day
-
 fc_files <- list.files(file.path(config$file_path$noaa_directory, config$location$site_id,
                                  download_dates[1], "00"),
                        full.names = TRUE)
@@ -96,3 +107,5 @@ fc_files <- list.files(file.path(config$file_path$noaa_directory, config$locatio
 fid <- ncdf4::nc_open(fc_files[1])
 fid$dim$longitude$vals
 ncdf4::nc_close(fid)
+
+#####
