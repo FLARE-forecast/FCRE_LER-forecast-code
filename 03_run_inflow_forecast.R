@@ -1,5 +1,12 @@
+lake_directory <- getwd()
+
 config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr", "configure_flare.yml"))
 run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
+
+# Configure run settings ----
+run_config$forecast_start_datetime <- format(Sys.Date(), "%Y-%m-%d %H:%M:%S")
+run_config$start_datetime <- format((Sys.Date() - lubridate::days(7)), "%Y-%m-%d %H:%M:%S")
+run_config$forecast_horizon
 
 # Set working directories for your system
 config$file_path$noaa_directory <- file.path(lake_directory, "forecasted_drivers", config$met$forecast_met_model)
@@ -42,7 +49,7 @@ config$future_inflow_temp_error <- 0.943
 
 forecast_files <- list.files(noaa_forecast_path, full.names = TRUE)
 
-temp_flow_forecast <- forecast_inflows_outflows(inflow_obs = file.path(config$file_path$qaqc_data_directory, "/inflow_postQAQC.csv"),
+temp_flow_forecast <- forecast_inflows_outflows(inflow_obs = file.path(config$file_path$qaqc_data_directory, "inflow_postQAQC.csv"),
                                                 forecast_files = forecast_files,
                                                 obs_met_file = file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc"),
                                                 output_dir = config$file_path$inflow_directory,

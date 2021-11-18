@@ -77,7 +77,7 @@ inflow_qaqc <- function(realtime_file,
   #account for building new weir in June 2019 (FCR Specific), and
   #aggregate to daily mean.##
 
-  inflow_realtime <- read_csv(diana_location, skip=4, col_names = F, col_types = readr::cols())
+  inflow_realtime <- read_csv(diana_location, skip=7, col_names = F, col_types = readr::cols())
   inflow_realtime_headers <- read.csv(diana_location, skip=1, header = F, nrows= 1, as.is=T)
   colnames(inflow_realtime) <- inflow_realtime_headers
   inflow_realtime <- inflow_realtime %>%

@@ -1,4 +1,4 @@
-#Note: lake_directory and update_run_config need to be set prior to running this script
+lake_directory <- getwd()
 
 update_run_config <- FALSE
 if(!exists("lake_directory")){
@@ -20,6 +20,11 @@ config$file_path$execute_directory <- file.path(lake_directory, "flare_tempdir")
 config$file_path$forecast_output_directory <- file.path(lake_directory, "forecast_output")
 config$file_path$qaqc_data_directory <- file.path(lake_directory, "data_processed")
 config$file_path$run_config <- file.path(lake_directory, "configuration", "flarer/configure_run.yml")
+
+# Configure run settings ----
+run_config$forecast_start_datetime <- format(Sys.Date(), "%Y-%m-%d %H:%M:%S")
+run_config$start_datetime <- format((Sys.Date() - lubridate::days(7)), "%Y-%m-%d %H:%M:%S")
+run_config$forecast_horizon
 
 config$run_config <- run_config
 # Set up timings
@@ -63,7 +68,6 @@ if(length(forecast_files) > 0){
                                             config = config)
 
   # Inflow Drivers for GLM
-
   if(config$model_settings$model_name == "glm"){
 
   inflow_forecast_path <- file.path(config$file_path$inflow_directory, config$inflow$forecast_inflow_model,config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
