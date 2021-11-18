@@ -35,9 +35,6 @@ inflow_qaqc <- function(realtime_file,
                         cleaned_inflow_file,
                         input_file_tz){
 
-  ##Step 1: Pull required data from GitHub ##
-  diana_location <- realtime_file
-
   ##Step 2: Read in historical flow data, clean, and aggregate to daily mean##
 
   flow <- readr::read_csv(qaqc_file, guess_max = 1000000, col_types = readr::cols()) %>%
@@ -45,23 +42,20 @@ inflow_qaqc <- function(realtime_file,
     dplyr::mutate(timestamp = lubridate::as_datetime(timestamp, tz = input_file_tz),
                   timestamp = lubridate::with_tz(timestamp, tzone = "UTC")) %>%
     dplyr::select(timestamp, WVWA_Flow_cms, WVWA_Temp_C, VT_Flow_cms, VT_Temp_C) %>%
-    dplyr::mutate(day = day(timestamp),
-           year = year(timestamp),
-           month = month(timestamp)) %>%
-    dplyr::group_by(day, year, month) %>%
+    dplyr::mutate(date = as_date(timestamp)) %>%
+    dplyr::group_by(date) %>%
     dplyr:: summarize(WVWA_Flow_cms = mean(WVWA_Flow_cms, na.rm = TRUE),
               WVWA_Temp_C = mean(WVWA_Temp_C, na.rm = TRUE),
               VT_Flow_cms = mean(VT_Flow_cms, na.rm = TRUE),
               VT_Temp_C = mean(VT_Temp_C, na.rm = TRUE), .groups = "drop") %>%
     dplyr::ungroup() %>%
-    dplyr::mutate(day = as.numeric(day)) %>%
-    dplyr::mutate(day = ifelse(as.numeric(day) < 10, paste0("0",day),day)) %>%
-    dplyr::mutate(time = as_date(paste0(year,"-",month,"-",day))) %>%
-    dplyr::select(time,WVWA_Flow_cms,WVWA_Temp_C,VT_Flow_cms,VT_Temp_C) %>%
+    dplyr::select(date,WVWA_Flow_cms,WVWA_Temp_C,VT_Flow_cms,VT_Temp_C) %>%
     dplyr::mutate(VT_Flow_cms = ifelse(is.nan(VT_Flow_cms), NA, VT_Flow_cms),
            VT_Temp_C = ifelse(is.nan(VT_Temp_C), NA, VT_Temp_C),
            WVWA_Flow_cms = ifelse(is.nan(WVWA_Flow_cms), NA, WVWA_Flow_cms),
            WVWA_Temp_C = ifelse(is.nan(WVWA_Temp_C), NA, WVWA_Temp_C)) %>%
+    dplyr::rename("time" = date) %>%
+    dplyr::filter(!is.na(time)) %>%
     dplyr::arrange(time)
 
   inflow_temp_flow <- tibble(time = seq(first(flow$time), last(flow$time), by = "1 day")) %>%
@@ -77,8 +71,13 @@ inflow_qaqc <- function(realtime_file,
   #account for building new weir in June 2019 (FCR Specific), and
   #aggregate to daily mean.##
 
+<<<<<<< HEAD
   inflow_realtime <- read_csv(diana_location, skip=7, col_names = F, col_types = readr::cols())
   inflow_realtime_headers <- read.csv(diana_location, skip=1, header = F, nrows= 1, as.is=T)
+=======
+  inflow_realtime <- read_csv(realtime_file, skip=4, col_names = F, col_types = readr::cols())
+  inflow_realtime_headers <- read.csv(realtime_file, skip=1, header = F, nrows= 1, as.is=T)
+>>>>>>> upstream/main
   colnames(inflow_realtime) <- inflow_realtime_headers
   inflow_realtime <- inflow_realtime %>%
     select(TIMESTAMP, Lvl_psi, wtr_weir) %>%
@@ -90,16 +89,11 @@ inflow_qaqc <- function(realtime_file,
     filter(time > last(inflow_temp_flow$time)) %>%
     mutate(head = ((65.822 * psi_corr) - 4.3804) / 100,
            FLOW = 2.391 * (head^2.5)) %>%
-    mutate(day = day(time),
-           year = year(time),
-           month = month(time)) %>%
-    group_by(day, year, month) %>%
+    mutate(date = as_date(time)) %>%
+    group_by(date) %>%
     summarize(FLOW = mean(FLOW, na.rm = TRUE),
               TEMP = mean(TEMP, na.rm = TRUE), .groups = "drop") %>%
-    ungroup() %>%
-    mutate(day = as.numeric(day)) %>%
-    mutate(day = ifelse(as.numeric(day) < 10, paste0("0",day),day)) %>%
-    mutate(time = as_date(paste0(year,"-",month,"-",day))) %>%
+    mutate(time = date) %>%
     select(time, FLOW, TEMP) %>%
     mutate(FLOW = 0.003122 + 0.662914*FLOW, #Convert Diana to WVWA
            SALT = 0.0)
@@ -202,7 +196,13 @@ inflow_qaqc <- function(realtime_file,
   #   facet_wrap(~Nutrient, scales = "free")
 
 
+  if(!dir.exists(dirname(cleaned_inflow_file))){
+    dir.create(dirname(cleaned_inflow_file), recursive = TRUE)
+  }
+
   readr::write_csv(inflow_clean, cleaned_inflow_file)
+
+  return(cleaned_inflow_file)
 
 }
 

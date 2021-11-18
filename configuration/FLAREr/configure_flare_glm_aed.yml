@@ -1,11 +1,11 @@
 file_path:
-   qaqc_data_directory: /Users/quinn/Downloads/FCRE-forecast-code/data_processed
+   qaqc_data_directory: /Users/quinn/workfiles/Research/SSC_forecasting/run_flare_package/flarer_aed/data_processed
    noaa_directory: /Users/quinn/workfiles/Research/SSC_forecasting/SCC_data/
    inflow_directory: /Users/quinn/workfiles/Research/SSC_forecasting/SCC_data/
-   configuration_directory: /Users/quinn/Downloads/FCRE-forecast-code/configuration/
-   execute_directory: /Users/quinn/Downloads/FCRE-forecast-code/flare_tempdir
-   forecast_output_directory: /Users/quinn/Downloads/FCRE-forecast-code/forecast_output
-   run_config: /Users/quinn/Downloads/FCRE-forecast-code/configuration/flarer/configure_run.yml
+   configuration_directory: /Users/quinn/workfiles/Research/SSC_forecasting/run_flare_package/flarer_aed/configuration
+   execute_directory: /Users/quinn/workfiles/Research/SSC_forecasting/run_flare_package/flarer_aed/flare_tempdir
+   forecast_output_directory: /Users/quinn/workfiles/Research/SSC_forecasting/run_flare_package/flarer_aed/forecast_output
+   run_config: /Users/quinn/workfiles/Research/SSC_forecasting/run_flare_package/flarer_aed/configuration/flarer/configure_run.yml
 location:
    site_id: fcre
    name: Falling Creek Reservoir
@@ -66,10 +66,10 @@ default_init:
    white_ice_thickness: 0.0
    blue_ice_thickness: 0.0
 inflow:
-   use_forecasted_inflow: TRUE
+   use_forecasted_inflow: FALSE
    forecast_inflow_model: FLOWS-NOAAGEFS-AR1
 met:
-   use_forecasted_met: TRUE
+   use_forecasted_met: FALSE
    forecast_met_model: NOAAGEFS_1hr-debias
 uncertainty:
    observation: TRUE

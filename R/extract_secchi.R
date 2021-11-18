@@ -6,8 +6,7 @@ extract_secchi <- function(fname,
                 col_types = readr::cols()) %>%
     filter(Reservoir == "FCR" & Site == 50) %>%
     select(DateTime, Secchi_m) %>%
-    mutate(DateTime = mdy_hm(DateTime),
-           DateTime = force_tz(DateTime, input_file_tz)) %>%
+    mutate(DateTime = force_tz(DateTime, input_file_tz)) %>%
     group_by(DateTime) %>%
     summarise(secchi = mean(Secchi_m, na.rm = TRUE), .groups = 'drop') %>%
     rename("timestamp" = DateTime) %>%

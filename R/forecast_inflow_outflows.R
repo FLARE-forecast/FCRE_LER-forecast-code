@@ -1,5 +1,14 @@
 
-forecast_inflows_outflows <- function(inflow_obs, forecast_files, obs_met_file, output_dir, inflow_model, inflow_process_uncertainty, forecast_location, config){
+forecast_inflows_outflows <- function(inflow_obs,
+                                      forecast_files,
+                                      obs_met_file,
+                                      output_dir,
+                                      inflow_model,
+                                      inflow_process_uncertainty,
+                                      forecast_location,
+                                      config,
+                                      use_s3 = FALSE,
+                                      bucket = NULL){
 
   inflow <- readr::read_csv(inflow_obs, col_types = readr::cols())
 
@@ -25,10 +34,12 @@ forecast_inflows_outflows <- function(inflow_obs, forecast_files, obs_met_file, 
   run_cycle <- lubridate::hour(noaa_met_time[1])
   if(run_cycle < 10){run_cycle <- paste0("0",run_cycle)}
 
-  run_dir <- file.path(output_dir, inflow_model, lake_name_code, run_date, run_cycle)
+  run_dir_full <- file.path(output_dir, inflow_model, lake_name_code, run_date, run_cycle)
+  run_dir <- file.path(inflow_model, lake_name_code, run_date, run_cycle)
 
-  if(!dir.exists(run_dir)){
-    dir.create(run_dir, recursive = TRUE)
+
+  if(!dir.exists(run_dir_full)){
+    dir.create(run_dir_full, recursive = TRUE)
   }
 
   ncdf4::nc_close(obs_met_nc)
@@ -47,6 +58,21 @@ forecast_inflows_outflows <- function(inflow_obs, forecast_files, obs_met_file, 
   if(length(init_flow_temp$FLOW) == 0){
     previous_run_date <- run_date - lubridate::days(1)
     previous_end_date <- end_date - lubridate::days(1)
+    previous_run_dir <- file.path(output_dir, inflow_model, lake_name_code, run_date, run_cycle)
+
+    if(use_s3){
+      previous_run_dir_bucket <- file.path("inflow", inflow_model, lake_name_code, run_date, run_cycle)
+
+
+      if(config$run_config$forecast_horizon > 0){
+        noaa_forecast_path <- file.path(lake_directory,"drivers/noaa", config$met$forecast_met_model,config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
+
+        download_s3_objects(lake_directory,
+                            bucket = "drivers",
+                            prefix = previous_run_dir_bucket)
+      }
+
+    }
     previous_run_dir <- file.path(output_dir, inflow_model, lake_name_code, run_date, run_cycle)
 
     previous_files <- list.files(previous_run_dir)
@@ -141,21 +167,33 @@ forecast_inflows_outflows <- function(inflow_obs, forecast_files, obs_met_file, 
     end_date <- dplyr::last(curr_met_daily$time)
 
 
-    identifier_inflow <- paste0("INFLOW-", inflow_model,"_", lake_name_code, "_", format(run_date, "%Y-%m-%d"),"_",
+    identifier_inflow <- paste0("INFLOW-", basename(inflow_model),"_", lake_name_code, "_", format(run_date, "%Y-%m-%d"),"_",
                                 format(end_date, "%Y-%m-%d"))
 
-    identifier_outflow <- paste0("OUTFLOW-", inflow_model, "_", lake_name_code, "_", format(run_date, "%Y-%m-%d"), "_",
+    identifier_outflow <- paste0("OUTFLOW-", basename(inflow_model), "_", lake_name_code, "_", format(run_date, "%Y-%m-%d"), "_",
                                  format(end_date, "%Y-%m-%d"))
 
-    inflow_file_name <- file.path(run_dir, paste0(identifier_inflow,"_", ens, ".csv"))
-    outflow_file_name <- file.path(run_dir, paste0(identifier_outflow,"_", ens, ".csv"))
+
+
+    local_inflow_file_name <- file.path(run_dir_full, paste0(identifier_inflow,"_", ens, ".csv"))
+    local_outflow_file_name <- file.path(run_dir_full, paste0(identifier_outflow,"_", ens, ".csv"))
 
     readr::write_csv(x = curr_met_daily,
-                     file = inflow_file_name)
+                     file = local_inflow_file_name)
 
     readr::write_csv(x = curr_met_daily_output,
-                     file = outflow_file_name)
+                     file = local_outflow_file_name)
+
+    if(use_s3){
+      aws.s3::put_object(file = local_inflow_file_name,
+                         object = file.path(run_dir, paste0(identifier_inflow,"_", ens, ".csv")),
+                         bucket = bucket)
+      aws.s3::put_object(file = local_outflow_file_name,
+                         object = file.path(run_dir, paste0(identifier_outflow,"_", ens, ".csv")),
+                         bucket = bucket)
+    }
+
 
   }
-  return(run_dir)
+  return(list(run_dir_full, run_dir))
 }

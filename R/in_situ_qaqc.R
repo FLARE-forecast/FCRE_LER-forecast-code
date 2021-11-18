@@ -4,7 +4,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
                          ctd_fname,
                          nutrients_fname,
                          secchi_fname,
-                         cleaned_observations_file_long,
+                         cleaned_insitu_file,
                          lake_name_code,
                          config){
 
@@ -93,9 +93,9 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
   d_clean <- d_clean %>% tidyr::drop_na(value)
 
-  if(!is.na(config$secchi_fname)){
+  if(!is.na(secchi_fname)){
 
-    d_secchi <- extract_secchi(fname = file.path(config$data_location, config$secchi_fname),
+    d_secchi <- extract_secchi(fname = file.path(secchi_fname),
                                input_file_tz = "EST",
                                focal_depths = config$focal_depths)
 
@@ -109,8 +109,15 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
   d_clean <- d_clean %>% select(date, hour, depth, value, variable)
 
-  readr::write_csv(d_clean, cleaned_observations_file_long)
+  d_clean$value <- round(d_clean$value, digits = 4)
 
-  #rm(d_clean, d, d_secchi, d_ch4, d_nutrients, d_ctd)
-  #gc()
+  if(!dir.exists(dirname(cleaned_insitu_file))){
+    dir.create(dirname(cleaned_insitu_file), recursive = TRUE)
+  }
+
+
+  readr::write_csv(d_clean, cleaned_insitu_file)
+
+  return(cleaned_insitu_file)
+
 }

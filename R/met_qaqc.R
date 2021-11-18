@@ -1,6 +1,6 @@
 met_qaqc <- function(realtime_file,
                      qaqc_file,
-                     cleaned_met_file_dir,
+                     cleaned_met_file,
                      input_file_tz,
                      nldas = NULL){
 
@@ -25,9 +25,7 @@ met_qaqc <- function(realtime_file,
                             IR01UpCo_Avg = readr::col_double(),
                             IR01DnCo_Avg = readr::col_double(),
                             NR01TK_Avg = readr::col_double(),
-                            Albedo_Avg = readr::col_double())) %>%
-      dplyr::slice(-c(1,2,3,4))
-
+                            Albedo_Avg = readr::col_double()), skip = 4)
     #d1 <- d1[-85572, ]
 
     TIMESTAMP_in <- lubridate::force_tz(d1$TIMESTAMP, tzone = input_file_tz)
@@ -161,7 +159,7 @@ met_qaqc <- function(realtime_file,
 
   d$air_pressure <- d$air_pressure * 1000
 
-  d$specific_humidity <-  noaaGEFSpoint:::rh2qair(rh = d$relative_humidity,
+  d$specific_humidity <-  rh2qair(rh = d$relative_humidity,
                                                   T = d$air_temperature,
                                                   press = d$air_pressure)
 
@@ -226,19 +224,17 @@ met_qaqc <- function(realtime_file,
              wind_speed = imputeTS::na_interpolation(wind_speed, option = "linear"))
   }
 
-  model_name <- "observed-met"
-  site <- "fcre"
   lat <- 37.27
   lon <- 360-79.9
   start_time <- dplyr::first((d$time))
   end_time <- dplyr::last((d$time))
   cf_units <- cf_var_units1
 
-  identifier <- paste(model_name, site,sep="_")
+  output_file <- cleaned_met_file
 
-  fname <- paste0(identifier,".nc")
-
-  output_file <- file.path(cleaned_met_file_dir, fname)
+  if(!dir.exists(dirname(cleaned_met_file))){
+    dir.create(dirname(cleaned_met_file), recursive = TRUE)
+  }
 
   start_time <- min(d$time)
   end_time <- max(d$time)
@@ -274,4 +270,27 @@ met_qaqc <- function(realtime_file,
 
   ncdf4::nc_close(nc_flptr)  #Write to the disk/storage
 
+  return(cleaned_met_file)
+
 }
+
+
+##' converts relative humidity to specific humidity
+##' @title RH to SH
+##' @param rh relative humidity (proportion, not percent)
+##' @param T absolute temperature (Kelvin)
+##' @param press air pressure (Pascals)
+##' @noRd
+##' @author Mike Dietze, Ankur Desai
+##' @aliases rh2rv
+rh2qair <- function(rh, T, press = 101325) {
+  stopifnot(T[!is.na(T)] >= 0)
+  Tc <- T - 273.15
+  es <- 6.112 * exp((17.67 * Tc) / (Tc + 243.5))
+  e <- rh * es
+  p_mb <- press / 100
+  qair <- (0.622 * e) / (p_mb - (0.378 * e))
+  ## qair <- rh * 2.541e6 * exp(-5415.0 / T) * 18/29
+  return(qair)
+} # rh2qair
+
