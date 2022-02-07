@@ -73,39 +73,6 @@ inflow_qaqc <- function(realtime_file,
   #account for building new weir in June 2019 (FCR Specific), and
   #aggregate to daily mean.##
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  inflow_realtime <- read_csv(diana_location, skip=7, col_names = F, col_types = readr::cols())
-  inflow_realtime_headers <- read.csv(diana_location, skip=1, header = F, nrows= 1, as.is=T)
-=======
-  inflow_realtime <- read_csv(realtime_file, skip=4, col_names = F, col_types = readr::cols())
-  inflow_realtime_headers <- read.csv(realtime_file, skip=1, header = F, nrows= 1, as.is=T)
->>>>>>> upstream/main
-  colnames(inflow_realtime) <- inflow_realtime_headers
-  inflow_realtime <- inflow_realtime %>%
-    select(TIMESTAMP, Lvl_psi, wtr_weir) %>%
-    rename("psi_corr" = Lvl_psi,
-           "time" = TIMESTAMP,
-           "TEMP" = wtr_weir) %>%
-    mutate(time = force_tz(time, tzone = input_file_tz),
-           time = with_tz(time, tzone = "UTC")) %>%
-    filter(time > last(inflow_temp_flow$time)) %>%
-    mutate(head = ((65.822 * psi_corr) - 4.3804) / 100,
-           FLOW = 2.391 * (head^2.5)) %>%
-    mutate(date = as_date(time)) %>%
-    group_by(date) %>%
-    summarize(FLOW = mean(FLOW, na.rm = TRUE),
-              TEMP = mean(TEMP, na.rm = TRUE), .groups = "drop") %>%
-    mutate(time = date) %>%
-    select(time, FLOW, TEMP) %>%
-    mutate(FLOW = 0.003122 + 0.662914*FLOW, #Convert Diana to WVWA
-           SALT = 0.0)
-
-  inflow_combined <- full_join(inflow_temp_flow, inflow_realtime, by = "time") %>%
-    mutate(FLOW = ifelse(is.na(FLOW.x), FLOW.y, FLOW.x),
-           TEMP = ifelse(is.na(TEMP.x), TEMP.y, TEMP.x),
-           SALT = ifelse(is.na(SALT.x), SALT.y, SALT.x)) %>%
-=======
   if(!is.na(realtime_file)){
     inflow_realtime <- read_csv(realtime_file, skip=4, col_names = F, col_types = readr::cols())
     inflow_realtime_headers <- read.csv(realtime_file, skip=1, header = F, nrows= 1, as.is=T)
@@ -137,7 +104,6 @@ inflow_qaqc <- function(realtime_file,
       select(time, FLOW, TEMP, SALT)
   }else{
     inflow_combined <- inflow_temp_flow
->>>>>>> 48bec5b9b34fb9611573ec442640eabb3ddda303
     select(time, FLOW, TEMP, SALT)
   }
 
