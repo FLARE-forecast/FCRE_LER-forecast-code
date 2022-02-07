@@ -7,12 +7,11 @@ extract_ch4 <- function(fname,
     mutate(DateTime = as_datetime(DateTime),
            DateTime = force_tz(DateTime, tzone = input_file_tz),
            DateTime = DateTime + hours(12))%>%
-    filter(Reservoir == "FCR" & Depth_m < 10) %>%
+    filter(Reservoir == "FCR" & Depth_m < 10 & Site == 100) %>%
     mutate(CH4 = ch4_umolL * 1000 * 0.001) %>%
     select(DateTime, Depth_m,CH4,Rep) %>%
     group_by(DateTime,Depth_m) %>%
-    summarise(CH4 = mean(CH4, na.rm = TRUE)) %>%
-    ungroup() %>%
+    summarise(CH4 = mean(CH4, na.rm = TRUE), .groups = "drop") %>%
     rename("timestamp" = DateTime,
            "depth" = Depth_m) %>%
     pivot_longer(cols = -c(timestamp, depth), names_to = "variable", values_to = "value") %>%

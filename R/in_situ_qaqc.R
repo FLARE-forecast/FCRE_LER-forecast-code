@@ -4,6 +4,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
                          ctd_fname,
                          nutrients_fname,
                          secchi_fname,
+                         ch4_fname = NULL,
                          cleaned_insitu_file,
                          lake_name_code,
                          config){
@@ -40,7 +41,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
   }
 
 
-  if(exists("ch4_fname")){
+  if(!is.null("ch4_fname")){
     if(!is.na(ch4_fname)){
       message("QAQC CH4")
       d_ch4 <- extract_ch4(fname = ch4_fname,

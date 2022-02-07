@@ -1,4 +1,4 @@
-renv::restore()
+#renv::restore()
 
 library(tidyverse)
 library(lubridate)
@@ -8,10 +8,6 @@ if(file.exists("~/.aws")){
                 "Consider renaming these so that automated upload will work"))
 }
 
-Sys.setenv("AWS_DEFAULT_REGION" = "s3",
-           "AWS_S3_ENDPOINT" = "flare-forecast.org")
-
-
 lake_directory <- here::here()
 update_run_config <- TRUE
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
@@ -19,17 +15,17 @@ sapply(files.sources, source)
 
 configure_run_file <- "configure_run.yml"
 
-config <- FLAREr::set_configuration(configure_run_file,lake_directory)
+config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
 
 config <- FLAREr::get_restart_file(config, lake_directory)
 
 FLAREr::get_targets(lake_directory, config)
 
 noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
-                                               forecast_model = config$met$forecast_met_model)
+                                                       forecast_model = config$met$forecast_met_model)
 
 inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
-                                               forecast_model = config$inflow$forecast_inflow_model)
+                                                         forecast_model = config$inflow$forecast_inflow_model)
 
 if(!is.null(noaa_forecast_path)){
   FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
@@ -45,9 +41,10 @@ if(!is.null(inflow_forecast_path)){
   inflow_file_dir <- NULL
 }
 
-pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$par_config_file), col_types = readr::cols())
-obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$obs_config_file), col_types = readr::cols())
-states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$states_config_file), col_types = readr::cols())
+
+pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
+obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$obs_config_file), col_types = readr::cols())
+states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$states_config_file), col_types = readr::cols())
 
 
 #Download and process observations (already done)
@@ -57,39 +54,22 @@ met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_p
                                           forecast_dir = forecast_dir,
                                           config = config)
 
-if(config$model_settings$model_name == "glm"){
 
-  inflow_outflow_files <- FLAREr::create_glm_inflow_outflow_files(inflow_file_dir = inflow_file_dir,
-                                                                  inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),
-                                                                  working_directory = config$file_path$execute_directory,
-                                                                  config = config,
-                                                                  state_names = states_config$state_names)
+inflow_outflow_files <- FLAREr::create_glm_inflow_outflow_files(inflow_file_dir = inflow_file_dir,
+                                                                inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),
+                                                                working_directory = config$file_path$execute_directory,
+                                                                config = config,
+                                                                state_names = states_config$state_names)
 
-  management <- NULL
+management <- NULL
 
-}else if(config$model_settings$model_name == "glm_aed"){
+if(config$model_settings$model_name == "glm_aed"){
 
-  #file.copy(file.path(config_obs$data_location, "manual-data/FCR_weir_inflow_2013_2019_20200828_allfractions_2poolsDOC.csv"),
-  #          file.path(config$file_path$execute_directory, "FCR_weir_inflow_2013_2019_20200624_allfractions_2poolsDOC.csv"))
+  https_file <- "https://raw.githubusercontent.com/cayelan/FCR-GLM-AED-Forecasting/master/FCR_2013_2019GLMHistoricalRun_GLMv3beta/inputs/FCR_SSS_inflow_2013_2021_20211102_allfractions_2DOCpools.csv"
+  download.file(https_file,
+                file.path(config$file_path$execute_directory, basename(https_file)))
 
-  #file.copy(file.path(config_obs$data_location, "manual-data/FCR_wetland_inflow_2013_2019_20200828_allfractions_2DOCpools.csv"),
-  #          file.path(config$file_path$execute_directory, "FCR_wetland_inflow_2013_2019_20200713_allfractions_2DOCpools.csv"))
-
-  #file.copy(file.path(config_obs$data_location, "manual-data/FCR_SSS_inflow_2013_2019_20200701_allfractions_2DOCpools.csv"),
-  #          file.path(config$file_path$execute_directory, "FCR_SSS_inflow_2013_2019_20200701_allfractions_2DOCpools.csv"))
-
-  #file.copy(file.path(config_obs$data_location, "manual-data/FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv"),
-  #          file.path(config$file_path$execute_directory, "FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv"))
-
-  #file1 <- file.path(config$file_path$execute_directory, "FCR_weir_inflow_2013_2019_20200624_allfractions_2poolsDOC.csv")
-  #file2 <- file.path(config$file_path$execute_directory, "FCR_wetland_inflow_2013_2019_20200713_allfractions_2DOCpools.csv")
-  #inflow_file_names <- tibble(file1 = file1,
-  #                            file2 = file2,
-  #                            file3 = "sss_inflow.csv")
-  #outflow_file_names <- tibble(file_1 = file.path(config$file_path$execute_directory, "FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv"),
-  #                             file_2 = "sss_outflow.csv")
-
-  #management <- FLAREr::generate_oxygen_management(config = config)
+  inflow_outflow_files$inflow_file_name <- cbind(inflow_outflow_files$inflow_file_name, rep(file.path(config$file_path$execute_directory,basename(https_file)), length(inflow_outflow_files$inflow_file_name)))
 }
 
 #Create observation matrix
@@ -148,5 +128,3 @@ gc()
 FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = 16, day_advance = 1)
 
 message(paste0("successfully generated flare forecats for: ", basename(saved_file)))
-
-

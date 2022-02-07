@@ -32,6 +32,8 @@
 inflow_qaqc <- function(realtime_file,
                         qaqc_file,
                         nutrients_file,
+                        silica_file,
+                        co2_ch4,
                         cleaned_inflow_file,
                         input_file_tz){
 
@@ -45,15 +47,15 @@ inflow_qaqc <- function(realtime_file,
     dplyr::mutate(date = as_date(timestamp)) %>%
     dplyr::group_by(date) %>%
     dplyr:: summarize(WVWA_Flow_cms = mean(WVWA_Flow_cms, na.rm = TRUE),
-              WVWA_Temp_C = mean(WVWA_Temp_C, na.rm = TRUE),
-              VT_Flow_cms = mean(VT_Flow_cms, na.rm = TRUE),
-              VT_Temp_C = mean(VT_Temp_C, na.rm = TRUE), .groups = "drop") %>%
+                      WVWA_Temp_C = mean(WVWA_Temp_C, na.rm = TRUE),
+                      VT_Flow_cms = mean(VT_Flow_cms, na.rm = TRUE),
+                      VT_Temp_C = mean(VT_Temp_C, na.rm = TRUE), .groups = "drop") %>%
     dplyr::ungroup() %>%
     dplyr::select(date,WVWA_Flow_cms,WVWA_Temp_C,VT_Flow_cms,VT_Temp_C) %>%
     dplyr::mutate(VT_Flow_cms = ifelse(is.nan(VT_Flow_cms), NA, VT_Flow_cms),
-           VT_Temp_C = ifelse(is.nan(VT_Temp_C), NA, VT_Temp_C),
-           WVWA_Flow_cms = ifelse(is.nan(WVWA_Flow_cms), NA, WVWA_Flow_cms),
-           WVWA_Temp_C = ifelse(is.nan(WVWA_Temp_C), NA, WVWA_Temp_C)) %>%
+                  VT_Temp_C = ifelse(is.nan(VT_Temp_C), NA, VT_Temp_C),
+                  WVWA_Flow_cms = ifelse(is.nan(WVWA_Flow_cms), NA, WVWA_Flow_cms),
+                  WVWA_Temp_C = ifelse(is.nan(WVWA_Temp_C), NA, WVWA_Temp_C)) %>%
     dplyr::rename("time" = date) %>%
     dplyr::filter(!is.na(time)) %>%
     dplyr::arrange(time)
@@ -71,6 +73,7 @@ inflow_qaqc <- function(realtime_file,
   #account for building new weir in June 2019 (FCR Specific), and
   #aggregate to daily mean.##
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   inflow_realtime <- read_csv(diana_location, skip=7, col_names = F, col_types = readr::cols())
   inflow_realtime_headers <- read.csv(diana_location, skip=1, header = F, nrows= 1, as.is=T)
@@ -102,88 +105,202 @@ inflow_qaqc <- function(realtime_file,
     mutate(FLOW = ifelse(is.na(FLOW.x), FLOW.y, FLOW.x),
            TEMP = ifelse(is.na(TEMP.x), TEMP.y, TEMP.x),
            SALT = ifelse(is.na(SALT.x), SALT.y, SALT.x)) %>%
+=======
+  if(!is.na(realtime_file)){
+    inflow_realtime <- read_csv(realtime_file, skip=4, col_names = F, col_types = readr::cols())
+    inflow_realtime_headers <- read.csv(realtime_file, skip=1, header = F, nrows= 1, as.is=T)
+    colnames(inflow_realtime) <- inflow_realtime_headers
+    inflow_realtime <- inflow_realtime %>%
+      select(TIMESTAMP, Lvl_psi, wtr_weir) %>%
+      rename("psi_corr" = Lvl_psi,
+             "time" = TIMESTAMP,
+             "TEMP" = wtr_weir) %>%
+      mutate(time = force_tz(time, tzone = input_file_tz),
+             time = with_tz(time, tzone = "UTC")) %>%
+      filter(time > last(inflow_temp_flow$time)) %>%
+      mutate(head = ((65.822 * psi_corr) - 4.3804) / 100,
+             head = ifelse(head < 0, 0, 1),
+             FLOW = 2.391 * (head^2.5)) %>%
+      mutate(date = as_date(time)) %>%
+      group_by(date) %>%
+      summarize(FLOW = mean(FLOW, na.rm = TRUE),
+                TEMP = mean(TEMP, na.rm = TRUE), .groups = "drop") %>%
+      mutate(time = date) %>%
+      select(time, FLOW, TEMP) %>%
+      mutate(FLOW = 0.003122 + 0.662914*FLOW, #Convert Diana to WVWA
+             SALT = 0.0)
+
+    inflow_combined <- full_join(inflow_temp_flow, inflow_realtime, by = "time") %>%
+      mutate(FLOW = ifelse(is.na(FLOW.x), FLOW.y, FLOW.x),
+             TEMP = ifelse(is.na(TEMP.x), TEMP.y, TEMP.x),
+             SALT = ifelse(is.na(SALT.x), SALT.y, SALT.x)) %>%
+      select(time, FLOW, TEMP, SALT)
+  }else{
+    inflow_combined <- inflow_temp_flow
+>>>>>>> 48bec5b9b34fb9611573ec442640eabb3ddda303
     select(time, FLOW, TEMP, SALT)
+  }
 
   #### BRING IN THE NUTRIENTS
 
   if(!is.na(nutrients_file)){
 
-    nutrients <- read_csv(nutrients_file, guess_max = 100000, col_types = readr::cols()) %>%
-      filter(Reservoir == "FCR" & Site == "100") %>%
-      rename("time" = DateTime)  %>%
-      mutate(time = as_date(time)) %>%
+    FCRchem <- readr::read_csv(nutrients_file) %>%
+      dplyr::select(Reservoir:DIC_mgL) %>%
+      dplyr::filter(Reservoir == "FCR") %>%
+      dplyr::filter(Site == 100) %>% #inflow site code
+      dplyr::rename(time = DateTime) %>%
+      dplyr::mutate(time = lubridate::force_tz(time, tzone = input_file_tz),
+                    time = lubridate::with_tz(time, tzone = "UTC"),
+                    time = lubridate::as_date(time)) %>%
+      #mutate(DateTime = as.POSIXct(strptime(DateTime, "%Y-%m-%d", tz="EST"))) %>%
+      dplyr::filter(TP_ugL < 100) %>% #remove outliers
+      dplyr::select(time:DIC_mgL)
+
+    silica <- readr::read_csv(silica_file) %>%
+      dplyr::filter(Reservoir == "FCR") %>%
+      dplyr::filter(Site == 100) %>% #100 = weir inflow site
+      select(DateTime, DRSI_mgL) %>%
+      dplyr::rename(time = DateTime) %>%
+      dplyr::mutate(time = lubridate::force_tz(time, tzone = input_file_tz),
+                    time = lubridate::with_tz(time, tzone = "UTC"),
+                    time = lubridate::as_date(time))
+
+    all_data <- left_join(inflow_combined, FCRchem, by = "time")
+
+    ghg <- readr::read_csv(co2_ch4) %>%
+      dplyr::filter(Reservoir == "FCR") %>%
+      dplyr::filter(Site == 100) %>% #weir inflow
+      dplyr::select(DateTime, ch4_umolL) %>%
+      dplyr::rename(time = DateTime,
+                    CAR_ch4 = ch4_umolL) %>%
+      dplyr::mutate(time = lubridate::force_tz(time, tzone = input_file_tz),
+                    time = lubridate::with_tz(time, tzone = "UTC"),
+                    time = lubridate::as_date(time)) %>%
+      dplyr::group_by(time) %>%
+      tidyr::drop_na() %>%
+      dplyr::summarise(CAR_ch4 = mean(CAR_ch4)) %>%
+      dplyr::filter(CAR_ch4 < 0.2) #remove outliers
+
+
+    start_date<- lubridate::as_date("2015-07-07")
+    end_date<- lubridate::as_date("2020-12-31")
+
+
+    #start_date<-as.POSIXct(strptime("2015-07-07", "%Y-%m-%d", tz="EST"))
+    #end_date<-as.POSIXct(strptime("2020-12-31", "%Y-%m-%d", tz="EST"))
+
+    #creating new dataframe with list of all dates
+    datelist<-seq(start_date,end_date, "1 day") #changed from May 15, 2013 because of NA in flow
+    datelist<-tibble::tibble(time = datelist)
+
+    ghg1 <- left_join(datelist, ghg, by="time")
+    #need to interpolate missing data, but first need to fill first & last values
+    ghg1$CAR_ch4[1]<-ghg$CAR_ch4[which.min(abs(ghg$time - start_date))]
+    ghg1$CAR_ch4[length(ghg1$CAR_ch4)]<-ghg$CAR_ch4[which.min(abs(ghg$time - end_date))]
+    ghg1$CAR_ch4 <- zoo::na.fill(zoo::na.approx(ghg1$CAR_ch4), "extend")
+
+    alldata<-left_join(all_data, ghg1, by="time") %>%
+      dplyr::group_by(time) %>%
+      dplyr::summarise_all(mean, na.rm=TRUE)
+    #merge chem with CH4 data, truncating to start and end date period of CH4 (not chem)
+
+    lastrow <- length(alldata$time) #need for extend function below
+    #now need to interpolate missing values in chem; setting 1st and last value in time series as medians
+    #then linearly interpolating the middle missing values
+    alldata$TN_ugL[1]<-median(na.exclude(alldata$TN_ugL))
+    alldata$TN_ugL[lastrow]<-median(na.exclude(alldata$TN_ugL))
+    alldata$TN_ugL<-zoo::na.fill(zoo::na.approx(alldata$TN_ugL),"extend")
+
+    alldata$TP_ugL[1]<-median(na.exclude(alldata$TP_ugL))
+    alldata$TP_ugL[lastrow]<-median(na.exclude(alldata$TP_ugL))
+    alldata$TP_ugL<-zoo::na.fill(zoo::na.approx(alldata$TP_ugL),"extend")
+
+    alldata$NH4_ugL[1]<-median(na.exclude(alldata$NH4_ugL))
+    alldata$NH4_ugL[lastrow]<-median(na.exclude(alldata$NH4_ugL))
+    alldata$NH4_ugL<-zoo::na.fill(zoo::na.approx(alldata$NH4_ugL),"extend")
+
+    alldata$NO3NO2_ugL[1]<-median(na.exclude(alldata$NO3NO2_ugL))
+    alldata$NO3NO2_ugL[lastrow]<-median(na.exclude(alldata$NO3NO2_ugL))
+    alldata$NO3NO2_ugL<-zoo::na.fill(zoo::na.approx(alldata$NO3NO2_ugL),"extend")
+
+    alldata$SRP_ugL[1]<-median(na.exclude(alldata$SRP_ugL))
+    alldata$SRP_ugL[lastrow]<-median(na.exclude(alldata$SRP_ugL))
+    alldata$SRP_ugL<-zoo::na.fill(zoo::na.approx(alldata$SRP_ugL),"extend")
+
+    alldata$DOC_mgL[1]<-median(na.exclude(alldata$DOC_mgL))
+    alldata$DOC_mgL[lastrow]<-median(na.exclude(alldata$DOC_mgL))
+    alldata$DOC_mgL<-zoo::na.fill(zoo::na.approx(alldata$DOC_mgL),"extend")
+
+    alldata$DIC_mgL[1]<-median(na.exclude(alldata$DIC_mgL))
+    alldata$DIC_mgL[lastrow]<-median(na.exclude(alldata$DIC_mgL))
+    alldata$DIC_mgL<-zoo::na.fill(zoo::na.approx(alldata$DIC_mgL),"extend")
+
+    alldata <- alldata[(!duplicated(alldata$time)),] #remove duplicated dates
+
+    #need to convert mass observed data into mmol/m3 units for two pools of organic carbon
+    weir_inflow <- alldata %>%
+      select(-c(Depth_m, Rep)) %>%
       mutate(NIT_amm = NH4_ugL*1000*0.001*(1/18.04),
-             NIT_nit =  NO3NO2_ugL*1000*0.001*(1/62.00),
+             NIT_nit = NO3NO2_ugL*1000*0.001*(1/62.00), #as all NO2 is converted to NO3
              PHS_frp = SRP_ugL*1000*0.001*(1/94.9714),
-             #PHS_frp_ads = PHS_frp,
-             OGM_doc = DOC_mgL*1000*(1/12.01)* 0.10,
-             OGM_docr = DOC_mgL*1000*(1/12.01)* 0.90,
-             OGM_poc = 0.1*(OGM_doc+OGM_docr),
-             TN = TN_ugL*1000*0.001*(1/14),
-             TP = TP_ugL*1000*0.001*(1/30.97),
-             OGM_don = (5/6)*(TN-(NIT_amm+NIT_nit)) * 0.1,
-             OGM_donr = (5/6)*(TN-(NIT_amm+NIT_nit)) * 0.9,
-             OGM_dop = 0.3*(TP - PHS_frp) *0.1,
-             OGM_dopr = 0.3*(TP - PHS_frp) * 0.9,
-             OGM_pon = (1/6)*(TN -(NIT_amm+NIT_nit)),
-             OGM_pop = 0.7*(TP - PHS_frp),
-             #CAR_dic = DIC_mgL*1000*(1/52.515),
-             #CAR_ch4 = 0.0,
-             SIL_rsi = 126.3866) %>%
-      select(time, NIT_amm, NIT_nit, PHS_frp, OGM_doc, OGM_docr, OGM_poc, OGM_don,OGM_donr, OGM_dop, OGM_dopr, OGM_pop, OGM_pon,SIL_rsi)
+             OGM_doc = DOC_mgL*1000*(1/12.01)* 0.10,  #assuming 10% of total DOC is in labile DOC pool (Wetzel page 753)
+             OGM_docr = 1.5*DOC_mgL*1000*(1/12.01)* 0.90, #assuming 90% of total DOC is in recalcitrant DOC pool
+             TN_ugL = TN_ugL*1000*0.001*(1/14),
+             TP_ugL = TP_ugL*1000*0.001*(1/30.97),
+             OGM_poc = 0.1*(OGM_doc+OGM_docr), #assuming that 10% of DOC is POC (Wetzel page 755
+             OGM_don = (5/6)*(TN_ugL-(NIT_amm+NIT_nit))*0.10, #DON is ~5x greater than PON (Wetzel page 220)
+             OGM_donr = (5/6)*(TN_ugL-(NIT_amm+NIT_nit))*0.90, #to keep mass balance with DOC, DONr is 90% of total DON
+             OGM_pon = (1/6)*(TN_ugL-(NIT_amm+NIT_nit)), #detemined by subtraction
+             OGM_dop = 0.3*(TP_ugL-PHS_frp)*0.10, #Wetzel page 241, 70% of total organic P = particulate organic; 30% = dissolved organic P
+             OGM_dopr = 0.3*(TP_ugL-PHS_frp)*0.90,#to keep mass balance with DOC & DON, DOPr is 90% of total DOP
+             OGM_pop = TP_ugL-(OGM_dop+OGM_dopr+PHS_frp), # #In lieu of having the adsorbed P pool activated in the model, need to have higher complexed P
+             CAR_dic = DIC_mgL*1000*(1/52.515),
+             OXY_oxy = rMR::Eq.Ox.conc(TEMP, elevation.m = 506, #creating OXY_oxy column using RMR package, assuming that oxygen is at 100% saturation in this very well-mixed stream
+                                       bar.press = NULL, bar.units = NULL,
+                                       out.DO.meas = "mg/L",
+                                       salinity = 0, salinity.units = "pp.thou"),
+             OXY_oxy = OXY_oxy *1000*(1/32),
+             PHY_cyano = 0,
+             PHY_green = 0,
+             PHY_diatom = 0,
+             SIL_rsi = median(silica$DRSI_mgL),
+             SIL_rsi = SIL_rsi*1000*(1/60.08),
+             SALT = 0) %>%
+      mutate_if(is.numeric, round, 4) #round to 4 digits
 
-    inflow_combined_with_na <- left_join(inflow_combined, nutrients, by = "time") %>%
-      mutate(OXY_oxy = rMR::Eq.Ox.conc(TEMP, elevation.m = 506,
-                                  bar.press = NULL, bar.units = NULL,
-                                  out.DO.meas = "mg/L",
-                                  salinity = 0, salinity.units = "pp.thou")*1000*(1/32)) %>%
-      mutate(NIT_amm = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(NIT_amm), NA),
-             NIT_nit = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(NIT_nit), NA),
-             PHS_frp = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(PHS_frp), NA),
-             OGM_doc = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_doc), NA),
-             OGM_docr = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_docr), NA),
-             OGM_poc = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_poc), NA),
-             OGM_don = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_don), NA),
-             OGM_donr = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_donr), NA),
-             OGM_dop = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_dop), NA),
-             OGM_dopr = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_dopr), NA),
-             OGM_pop = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_pop), NA),
-             OGM_pon = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_pon), NA),
-             #PHS_frp_ads = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), na_interpolation(PHS_frp_ads), NA),
-             #CAR_dic = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), na_interpolation(CAR_dic), NA),
-             #CAR_ch4 = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), na_interpolation(CAR_ch4), NA),
-             SIL_rsi = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(SIL_rsi), NA)
-      ) %>%
-      mutate(OGM_dop = ifelse(time > as_date("2013-09-01") & time < as_date("2015-01-01"), NA, OGM_dop),
-             OGM_dopr = ifelse(time > as_date("2013-09-01") & time < as_date("2015-01-01"), NA, OGM_dopr),
-             OGM_pop = ifelse(time > as_date("2013-09-01") & time < as_date("2015-01-01"), NA, OGM_pop))
+    #Long-term median pH of FCR is 6.5, at which point CO2/HCO3 is about 50-50
 
-    nutrients_monthly <- nutrients %>%
-      mutate(month = month(time)) %>%
-      group_by(month) %>%
-      summarise_at(vars(NIT_amm:SIL_rsi), mean, na.rm = TRUE, .groups = "drop")
+    #given this disparity, using a 50-50 weighted molecular weight (44.01 g/mol and 61.02 g/mol, respectively)
 
-    inflow_clean <- inflow_combined_with_na %>%
-      mutate(month = month(time)) %>%
-      left_join(nutrients_monthly, by = "month") %>%
-      mutate(NIT_amm = ifelse(is.na(NIT_amm.x), NIT_amm.y,NIT_amm.x),
-             NIT_nit = ifelse(is.na(NIT_nit.x), NIT_nit.y,NIT_nit.x),
-             PHS_frp = ifelse(is.na(PHS_frp.x), PHS_frp.y,PHS_frp.x),
-             OGM_doc = ifelse(is.na(OGM_doc.x), OGM_doc.y,OGM_doc.x),
-             OGM_docr = ifelse(is.na(OGM_docr.x), OGM_docr.y,OGM_docr.x),
-             OGM_poc = ifelse(is.na(OGM_poc.x), OGM_poc.y,OGM_poc.x),
-             OGM_don = ifelse(is.na(OGM_don.x), OGM_don.y,OGM_don.x),
-             OGM_donr = ifelse(is.na(OGM_don.x), OGM_don.y,OGM_don.x),
-             OGM_dop = ifelse(is.na(OGM_dop.x), OGM_dop.y,OGM_dop.x),
-             OGM_dopr = ifelse(is.na(OGM_dop.x), OGM_dop.y,OGM_dop.x),
-             OGM_pop = ifelse(is.na(OGM_pop.x), OGM_pop.y,OGM_pop.x),
-             OGM_pon = ifelse(is.na(OGM_pon.x), OGM_pon.y,OGM_pon.x),
-             #PHS_frp_ads = ifelse(is.na(PHS_frp_ads.x), PHS_frp_ads.y,PHS_frp_ads.x),
-             #CAR_dic = ifelse(is.na(CAR_dic.x), CAR_dic.y,CAR_dic.x)) %>%
-      #CAR_ch4 = ifelse(is.na(CAR_ch4.x), CAR_ch4.y,CAR_ch4.x),
-             SIL_rsi = ifelse(is.na(SIL_rsi.x), SIL_rsi.y,SIL_rsi.x))  %>%
-      select(time, FLOW,TEMP,SALT,OXY_oxy, SIL_rsi, NIT_amm,NIT_nit,PHS_frp,OGM_doc,OGM_docr,OGM_poc,OGM_don,OGM_donr,OGM_pon,OGM_dop,OGM_dopr,OGM_pop)
 
+    #reality check of mass balance
+    # hist(weir_inflow$TP_ugL - (weir_inflow$PHS_frp + weir_inflow$OGM_dop + weir_inflow$OGM_dopr + weir_inflow$OGM_pop))
+    # hist(weir_inflow$TN_ugL - (weir_inflow$NIT_amm + weir_inflow$NIT_nit + weir_inflow$OGM_don + weir_inflow$OGM_donr + weir_inflow$OGM_pon))
+    VARS <- c("time", "FLOW", "TEMP", "SALT",
+              'OXY_oxy',
+              'CAR_dic',
+              'CAR_ch4',
+              'SIL_rsi',
+              'NIT_amm',
+              'NIT_nit',
+              'PHS_frp',
+              'OGM_doc',
+              'OGM_docr',
+              'OGM_poc',
+              'OGM_don',
+              'OGM_donr',
+              'OGM_pon',
+              'OGM_dop',
+              'OGM_dopr',
+              'OGM_pop',
+              'PHY_cyano',
+              'PHY_green',
+              'PHY_diatom')
+
+    #clean it up and get vars in order
+    inflow_clean <- weir_inflow %>%
+      dplyr::select(dplyr::all_of(VARS))
   }else{
     inflow_clean <- inflow_combined
   }
@@ -195,10 +312,7 @@ inflow_qaqc <- function(realtime_file,
   #   geom_line() +
   #   facet_wrap(~Nutrient, scales = "free")
 
-
-  if(!dir.exists(dirname(cleaned_inflow_file))){
-    dir.create(dirname(cleaned_inflow_file), recursive = TRUE)
-  }
+  dir.create(dirname(cleaned_inflow_file), recursive = TRUE, showWarnings = FALSE)
 
   readr::write_csv(inflow_clean, cleaned_inflow_file)
 

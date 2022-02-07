@@ -7,6 +7,7 @@ extract_secchi <- function(fname,
     filter(Reservoir == "FCR" & Site == 50) %>%
     select(DateTime, Secchi_m) %>%
     mutate(DateTime = force_tz(DateTime, input_file_tz)) %>%
+    mutate(DateTime = lubridate::with_tz(DateTime, tzone = "UTC")) %>%
     group_by(DateTime) %>%
     summarise(secchi = mean(Secchi_m, na.rm = TRUE), .groups = 'drop') %>%
     rename("timestamp" = DateTime) %>%
@@ -14,8 +15,6 @@ extract_secchi <- function(fname,
     mutate(depth = NA) %>%
     filter(!is.na(value)) %>%
     select(timestamp , depth, value, variable)
-
-  d <- d %>% mutate(timestamp = lubridate::with_tz(timestamp, tzone = "UTC"))
 
   return(d)
 }
