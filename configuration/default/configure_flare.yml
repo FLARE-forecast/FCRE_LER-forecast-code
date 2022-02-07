@@ -9,13 +9,13 @@ location:
    site_id: fcre
    name: Falling Creek Reservoir
    latitude: 37.307   #Degrees North
-   longitude: 79.837  #Degrees West
+   longitude: -79.837  #Degrees East
 metadata:
    generate_eml: TRUE
    forecast_project_id: test
-   abstract: "This is where a longer description of the forest can be added"
+   abstract: "This is where a longer description of the forecast can be added"
    forecast_title: FLARE
-   intellectualRights: insert license
+   intellectualRights: MIT
    model_description:
       forecast_model_id: https://github.com/rqthomas/flare/commit/d1ddcb07b9d28863890597503fc4aa4a4496de56
       name: General Lake Model
@@ -37,7 +37,7 @@ da_setup:
     use_obs_constraint: TRUE
 model_settings:
    ncore: 2
-   model_name: glm #other is "null"
+   model_name: glm
    base_GLM_nml: glm3.nml
    modeled_depths: [0.10, 0.33, 0.67,
                     1.00, 1.33, 1.67,
@@ -78,14 +78,3 @@ uncertainty:
    inflow_process: TRUE
 output_settings:
    diagnostics_names:  [extc_coef]
-management:
-   simulate_sss: TRUE
-   sss_depth: 8.0
-   use_specified_sss: TRUE
-   specified_sss_inflow_file: .na
-   specified_sss_outflow_file: .na
-   forecast_sss_flow: 1000
-   forecast_sss_oxy: 500
-   #umol/m3  of oxygen if SSS turned on in forecast
-   sss_fname: manual-data/FCR_SSS_inflow_2013_2020.csv
-   sss_inflow_factor: 0.25

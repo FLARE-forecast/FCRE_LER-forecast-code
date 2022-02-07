@@ -1,10 +1,7 @@
-renv::restore()
+#renv::restore()
 
 library(tidyverse)
 library(lubridate)
-
-Sys.setenv("AWS_DEFAULT_REGION" = "s3",
-           "AWS_S3_ENDPOINT" = "flare-forecast.org")
 
 lake_directory <- here::here()
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
@@ -12,7 +9,7 @@ sapply(files.sources, source)
 
 configure_run_file <- "configure_run.yml"
 
-config <- FLAREr::set_configuration(configure_run_file,lake_directory)
+config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
 
 config <- FLAREr::get_restart_file(config, lake_directory)
 
@@ -22,7 +19,11 @@ pdf_file <- FLAREr::plotting_general_2(file_name = config$run_config$restart_fil
                                        target_file = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")))
 
 if(config$run_config$use_s3){
-  success <- aws.s3::put_object(file = pdf_file, object = file.path(config$location$site_id, basename(pdf_file)), bucket = "analysis")
+  success <- aws.s3::put_object(file = pdf_file,
+                                object = file.path(config$location$site_id, basename(pdf_file)),
+                                bucket = "analysis",
+                                region = Sys.getenv("AWS_DEFAULT_REGION"),
+                                use_https = as.logical(Sys.getenv("USE_HTTPS")))
   if(success){
     unlink(pdf_file)
   }
@@ -33,7 +34,11 @@ png_file_name <- manager_plot(file_name = config$run_config$restart_file,
                               focal_depths = c(1, 5, 8))
 
 if(config$run_config$use_s3 & !is.na(png_file_name)){
-  success <- aws.s3::put_object(file = png_file_name, object = file.path(config$location$site_id, basename(png_file_name)), bucket = "analysis")
+  success <- aws.s3::put_object(file = png_file_name,
+                                object = file.path(config$location$site_id, basename(png_file_name)),
+                                bucket = "analysis",
+                                region = Sys.getenv("AWS_DEFAULT_REGION"),
+                                use_https = as.logical(Sys.getenv("USE_HTTPS")))
   if(success){
     unlink(png_file_name)
   }
@@ -43,4 +48,3 @@ if(config$run_config$use_s3){
   unlink(file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")))
   unlink(config$run_config$restart_file)
 }
-

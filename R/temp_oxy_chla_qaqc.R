@@ -12,7 +12,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                          "RDOsat_percent_9", "RDOTemp_C_9", "EXO_Date", "EXO_Time", "EXOTemp_C_1", "EXOCond_uScm_1",
                          "EXOSpCond_uScm_1", "EXOTDS_mgL_1", "EXODOsat_percent_1", "EXODO_mgL_1", "EXOChla_RFU_1",
                          "EXOChla_ugL_1", "EXOBGAPC_RFU_1", "EXOBGAPC_ugL_1", "EXOfDOM_RFU_1", "EXOfDOM_QSU_1",
-                         "EXO_pressure", "EXO_depth", "EXO_battery", "EXO_cablepower", "EXO_wiper")
+                         "EXO_pressure", "EXO_depth", "EXO_battery", "EXO_cablepower", "EXO_wiper", "Lvl_psi", "wtr_pt_9")
 
   # after maintenance, DO values will continue to be replaced by NA until DO_mgL returns within this threshold (in mg/L)
   # of the pre-maintenance value
@@ -231,7 +231,6 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     d1 <- catdata
 
     d2 <- read.csv(qaqc_file, na.strings = 'NA', stringsAsFactors = FALSE)
-
     TIMESTAMP_in <- as_datetime(d1$DateTime,tz = input_file_tz)
     d1$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = "UTC")
 
@@ -566,7 +565,3 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   return(d)
 }
 
-# example usage
-# qaqc("https://raw.githubusercontent.com/CareyLabVT/SCCData/mia-data/Catwalk.csv",
-#      "https://raw.githubusercontent.com/CareyLabVT/SCCData/mia-data/CAT_MaintenanceLog.txt",
-#      "Catwalk.csv")

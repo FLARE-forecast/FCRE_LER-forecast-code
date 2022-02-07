@@ -8,7 +8,8 @@ forecast_inflows_outflows <- function(inflow_obs,
                                       forecast_location,
                                       config,
                                       use_s3 = FALSE,
-                                      bucket = NULL){
+                                      bucket = NULL,
+                                      model_name = "glm"){
 
   inflow <- readr::read_csv(inflow_obs, col_types = readr::cols())
 
@@ -37,10 +38,7 @@ forecast_inflows_outflows <- function(inflow_obs,
   run_dir_full <- file.path(output_dir, inflow_model, lake_name_code, run_date, run_cycle)
   run_dir <- file.path(inflow_model, lake_name_code, run_date, run_cycle)
 
-
-  if(!dir.exists(run_dir_full)){
-    dir.create(run_dir_full, recursive = TRUE)
-  }
+  dir.create(run_dir_full, recursive = TRUE, showWarnings = FALSE)
 
   ncdf4::nc_close(obs_met_nc)
 
@@ -158,6 +156,40 @@ forecast_inflows_outflows <- function(inflow_obs,
                     inflow_num = 1) %>%
       slice(-1)
 
+    if(model_name == "glm_aed"){
+
+      clima_start <- lubridate::as_date("2015-07-07")
+      clima_end <-  lubridate::as_date(max(obs_met$time))
+
+      weir_inflow_dates <- inflow %>%
+        dplyr::filter(time > clima_start & time < clima_end) %>%
+        dplyr::mutate(DOY = yday(time)) %>%
+        dplyr::select(time, DOY)
+
+      #now make mean climatology
+      mean_DOY_data <- inflow %>%
+        dplyr::filter(time> clima_start & time< clima_end) %>%
+        dplyr::mutate(DOY = yday(time)) %>%
+        dplyr::group_by(DOY) %>%
+        dplyr::summarise(across(c("CAR_dic":"PHY_diatom"),mean))
+
+      curr_met_daily <- curr_met_daily %>%
+        dplyr::mutate(DOY = yday(time),
+                      OXY_oxy = rMR::Eq.Ox.conc(TEMP, elevation.m = 506, #creating OXY_oxy column using RMR package, assuming that oxygen is at 100% saturation in this very well-mixed stream
+                                  bar.press = NULL, bar.units = NULL,
+                                  out.DO.meas = "mg/L",
+                                  salinity = 0, salinity.units = "pp.thou"),
+                      OXY_oxy = OXY_oxy *1000*(1/32))
+
+
+      curr_met_daily <- dplyr::left_join(curr_met_daily, mean_DOY_data, by = "DOY") %>%
+        dplyr::select(-DOY) %>%
+        dplyr::mutate(OGM_docr = -238.5586 + 4101.3976*FLOW + 2.1472*OGM_docr + (-19.1272*OGM_docr*FLOW))
+      #this is my model, where I predict what stream OGM docr concentrations need to
+      # be based off of my
+    }
+
+
     curr_met_daily_output <- curr_met_daily %>%
       dplyr::select(time, FLOW, TEMP) %>%
       dplyr::mutate(type = "outflow",
@@ -187,10 +219,14 @@ forecast_inflows_outflows <- function(inflow_obs,
     if(use_s3){
       aws.s3::put_object(file = local_inflow_file_name,
                          object = file.path(run_dir, paste0(identifier_inflow,"_", ens, ".csv")),
-                         bucket = bucket)
+                         bucket = bucket,
+                         region = Sys.getenv("AWS_DEFAULT_REGION"),
+                         use_https = as.logical(Sys.getenv("USE_HTTPS")))
       aws.s3::put_object(file = local_outflow_file_name,
                          object = file.path(run_dir, paste0(identifier_outflow,"_", ens, ".csv")),
-                         bucket = bucket)
+                         bucket = bucket,
+                         region = Sys.getenv("AWS_DEFAULT_REGION"),
+                         use_https = as.logical(Sys.getenv("USE_HTTPS")))
     }
 
 

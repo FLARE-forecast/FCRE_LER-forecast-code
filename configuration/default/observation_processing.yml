@@ -73,16 +73,17 @@ insitu_obs_fname:
     - Catwalk_cleanedEDI.csv
 secchi_fname: Secchi_depth_2013-2020.csv
 ctd_fname: CTD_final_2013_2020.csv
-ch4_fname: fcre-manual-data/DATASET_for_EDI_LOL_MS_10May20.csv
+ch4_fname: Dissolved_CO2_CH4_Virginia_Reservoirs.csv
+silica_fname: silica_master_df.csv
 nutrients_fname: chemistry.csv
 variable_obsevation_depths: FALSE
-exo_sensor_2_ctd_chla: [1.8795, 0.6662]  #c(-2.0430, 2.5314) #c(1.8795, 0.6662)
+exo_sensor_2_ctd_chla: [1.394732, 0.3610641]  #c(-2.0430, 2.5314) #c(1.8795, 0.6662)
 exo_sensor_2_ctd_do: [0, 1] #c(8.3670, 0.7152)
 do_sensor_2_ctd_do_5: [0, 1] #c(19.6254, 0.8636)
 do_sensor_2_ctd_do_9: [0, 1] #c(11.0971, 0.9156)
 ctd_2_exo_sensor_chla: [0, 1]  #c(-2.0430, 2.5314) #c(-1.582, 1.335)
 ctd_2_exo_sensor_do: [0, 1] #c(-10.770, 1.061)
-exo_sensor_2_grab_sample_fdom: [-38.95, 22.47]
+exo_sensor_2_grab_sample_fdom: [-151.3407, 29.62654]
 focal_depths: .na #1.6
 maintenance_file: fcre-catwalk-data/CAT_MaintenanceLog.txt
 
@@ -107,8 +108,8 @@ averaging_period:
     - "1 day"
     - "1 day"
     - "1 day"
-    - "1 day"
-    - "1 day"
+    - "1 hour"
+    - "1 hour"
 
 averaging_period_starting_hour: "00:00:00"
 
