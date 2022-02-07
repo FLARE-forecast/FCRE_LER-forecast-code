@@ -3,6 +3,7 @@
 library(tidyverse)
 library(lubridate)
 
+config_set_name <- "default"
 message("Beginning generate targets")
 message(config_set_name)
 
@@ -18,8 +19,12 @@ sapply(files.sources, source)
 
 #' Generate the `config_obs` object and create directories if necessary
 
-config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name)
-config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+config_obs <- FLAREr::initialize_obs_processing(lake_directory,
+                                                observation_yml = "observation_processing.yml",
+                                                config_set_name)
+config <- FLAREr::set_configuration(configure_run_file = "configure_run.yml",
+                                    lake_directory,
+                                    config_set_name = config_set_name)
 
 
 #' Clone or pull from data repositories
