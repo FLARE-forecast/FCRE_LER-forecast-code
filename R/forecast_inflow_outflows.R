@@ -153,8 +153,8 @@ forecast_inflows_outflows <- function(inflow_obs,
       dplyr::select(time, FLOW, TEMP, SALT, AirTemp, Rain) %>%
       dplyr::mutate_at(dplyr::vars(c("FLOW", "TEMP", "SALT")), list(~round(., 4))) %>%
       dplyr::mutate(type = "inflow",
-                    inflow_num = 1) %>%
-      slice(-1)
+                    inflow_num = 1)
+      #slice(-1)
 
     if(model_name == "glm_aed"){
 
