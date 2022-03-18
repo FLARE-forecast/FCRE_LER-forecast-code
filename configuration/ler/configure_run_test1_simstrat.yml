@@ -1,0 +1,9 @@
+restart_file: .na
+start_datetime: 2021-09-01 00:00:00
+end_datetime: .na
+forecast_start_datetime: 2021-09-30 00:00:00
+forecast_horizon: 35
+sim_name: ler_simstrat_test4_200ens_v5
+configure_flare: configure_flare.yml
+configure_obs: observation_processing.yml
+use_s3: no
