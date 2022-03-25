@@ -49,7 +49,7 @@ forecast_inflows_outflows <- function(inflow_obs,
     dplyr::filter(time >= noaa_met_time[1] - lubridate::days(1) & time < noaa_met_time[1])
 
   init_flow_temp <- inflow %>%
-    filter(time == lubridate::as_date(noaa_met_time[1]) - lubridate::days(1))
+    dplyr::filter(time == lubridate::as_date(noaa_met_time[1]) - lubridate::days(1))
 
 
 
