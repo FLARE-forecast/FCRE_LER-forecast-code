@@ -38,10 +38,10 @@ sim_names <- paste0("ms1_ler_flare_", model)
 config_files <- paste0("configure_flare.yml")
 
 #num_forecasts <- 20
-num_forecasts <- 52 * 7 - 1
+num_forecasts <- 34 * 7 - 1
 days_between_forecasts <- 1
 forecast_horizon <- 34 #32
-starting_date <- as_date("2020-12-01")
+starting_date <- as_date("2021-03-01")
 second_date <- starting_date + months(1) - days(days_between_forecasts)
 
 start_dates <- rep(NA, num_forecasts)
