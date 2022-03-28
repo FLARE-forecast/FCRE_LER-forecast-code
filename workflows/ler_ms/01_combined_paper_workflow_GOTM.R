@@ -17,6 +17,7 @@ run_persistence_null <- FALSE
 use_archive <- FALSE
 ensemble_size <- 21
 model <- "GOTM"
+ncore <- parallel::detectCores() -1
 lake_directory <- here::here()
 source(file.path(lake_directory, "R","forecast_inflow_outflows.R"))
 
@@ -93,6 +94,7 @@ for(j in 1:length(sites)){
 
   config$da_setup$ensemble_size <- ensemble_size
   config$model_settings$model <- model
+  config$model_settings$ncore <- ncore
   config$run_config$use_s3 <- FALSE
 
 
