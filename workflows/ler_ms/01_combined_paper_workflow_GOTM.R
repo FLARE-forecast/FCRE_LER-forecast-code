@@ -12,12 +12,14 @@ config_set_name <- "ler_ms"
 run_ler_flare <- TRUE
 run_clim_null <- FALSE
 run_persistence_null <- FALSE
+start_from_scratch <- FALSE
+time_start_index <- 58
 #Set use_archive = FALSE unless you have read/write credentials for the remote
 #s3 bucket that is set up for running FLARE.
 use_archive <- FALSE
-ensemble_size <- 21
+ensemble_size <- 200
 model <- "GOTM"
-ncore <- parallel::detectCores() -1
+ncore <- parallel::detectCores() - 1
 lake_directory <- here::here()
 source(file.path(lake_directory, "R","forecast_inflow_outflows.R"))
 
@@ -31,8 +33,6 @@ if(use_archive){
   use_s3 <- FALSE
 }
 
-start_from_scratch <- TRUE
-time_start_index <- 1
 
 sim_names <- paste0("ms1_ler_flare_", model)
 config_files <- paste0("configure_flare.yml")
@@ -40,7 +40,7 @@ config_files <- paste0("configure_flare.yml")
 #num_forecasts <- 20
 num_forecasts <- 34 * 7 - 1
 days_between_forecasts <- 1
-forecast_horizon <- 34 #32
+forecast_horizon <- 4 #32
 starting_date <- as_date("2021-03-01")
 second_date <- starting_date + months(1) - days(days_between_forecasts)
 
@@ -89,6 +89,14 @@ for(j in 1:length(sites)){
     yaml::write_yaml(run_config, file = file.path(config$file_path$configuration_directory, configure_run_file))
   }else{
     config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
+    config$file_path$forecast_output_directory <- file.path(lake_directory, "forecasts", config$location$site_id, config$run_config$sim_name)
+
+    restart_files <- list.files(config$file_path$forecast_output_directory, "*.nc", full.names = FALSE)
+    restart_files <- restart_files[nchar(restart_files) > 40]
+    n_let <- nchar(paste0(config$run_config$sim_name, "_H_"))
+    dates <- substr(restart_files, n_let+1, n_let+10)
+    dates <- gsub("_", "-", dates)
+    config$run_config <- yaml::read_yaml(file.path(config$file_path$restart_directory, paste0("configure_run_", dates[length(dates)], ".yml")))
     time_start_index <- grep(as.Date(config$run_config$forecast_start_datetime), forecast_start_dates)
   }
 
@@ -219,6 +227,11 @@ for(j in 1:length(sites)){
 
     ##' Generate initial conditions
     pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
+
+    # Set fc output dire
+    config$file_path$forecast_output_directory <- file.path(lake_directory, "forecasts", config$location$site_id, config$run_config$sim_name)
+
+
     init <- FLAREr::generate_initial_conditions(states_config,
                                                 obs_config,
                                                 pars_config,
@@ -267,6 +280,10 @@ for(j in 1:length(sites)){
                                                       par_fit_method = config$da_setup$par_fit_method,
                                                       debug = TRUE)
 
+    # Set fc output dire
+    config$file_path$forecast_output_directory <- file.path(lake_directory, "forecasts", config$location$site_id, config$run_config$sim_name)
+    dir.create(config$file_path$forecast_output_directory, recursive = TRUE, showWarnings = FALSE)
+
     saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
                                                 forecast_output_directory = config$file_path$forecast_output_directory,
                                                 use_short_filename = FALSE)
@@ -292,7 +309,10 @@ for(j in 1:length(sites)){
       }
     }
 
+    restart_date <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) + lubridate::days(1))
     config <- FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = forecast_horizon, day_advance = days_between_forecasts)
+    file.copy(from = file.path(config$file_path$restart_directory, configure_run_file),
+              to = file.path(config$file_path$restart_directory, paste0("configure_run_", restart_date, ".yml")))
 
     # unlink(config$run_config$restart_file)
     unlink(forecast_dir, recursive = TRUE)

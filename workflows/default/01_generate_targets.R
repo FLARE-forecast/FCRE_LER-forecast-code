@@ -81,7 +81,8 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
                      lake_directory)
 
 #' Clean up observed meterology
-
+library(magrittr)
+library(dplyr)
 cleaned_met_file <- met_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
                              qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
                              cleaned_met_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id,paste0("observed-met_",config_obs$site_id,".nc")),
@@ -89,7 +90,7 @@ cleaned_met_file <- met_qaqc(realtime_file = file.path(config_obs$file_path$data
                              nldas = NULL)
 
 #' Clean up observed inflow
-
+library(tidyverse)
 cleaned_inflow_file <- inflow_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[1]),
                                    qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[2]),
                                    nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
