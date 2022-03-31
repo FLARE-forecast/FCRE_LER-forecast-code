@@ -177,10 +177,12 @@ for(j in 1:length(sites)){
     # mCatch for missing files
     if(i > 1) {
       file_chk <- length(list.files(forecast_dir)) > 0
+    } else {
+      file_chk <- FALSE
     }
 
     # If no NOAA files - skips to next day
-    if(!file_chk) {
+    if(!file_chk & i > 1) {
       message("No NOAA files for ", forecast_start_dates[i])
       config$run_config$forecast_start_datetime <- paste0(forecast_start_dates[i+1], " 00:00:00")
       next
@@ -332,7 +334,7 @@ for(j in 1:length(sites)){
     restart_date <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) + lubridate::days(1))
     config <- FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = forecast_horizon, day_advance = days_between_forecasts)
     file.copy(from = file.path(config$file_path$restart_directory, configure_run_file),
-              to = file.path(config$file_path$restart_directory, paste0("configure_run_", restart_date, ".yml")))
+              to = file.path(config$file_path$restart_directory, paste0("configure_run_", restart_date, ".yml")), overwrite = TRUE)
 
     # unlink(config$run_config$restart_file)
     unlink(forecast_dir, recursive = TRUE)
