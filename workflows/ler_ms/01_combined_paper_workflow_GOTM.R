@@ -12,8 +12,8 @@ config_set_name <- "ler_ms"
 run_ler_flare <- TRUE
 run_clim_null <- FALSE
 run_persistence_null <- FALSE
-start_from_scratch <- FALSE
-time_start_index <- 58
+start_from_scratch <- TRUE
+time_start_index <- 1
 #Set use_archive = FALSE unless you have read/write credentials for the remote
 #s3 bucket that is set up for running FLARE.
 use_archive <- FALSE
@@ -40,7 +40,7 @@ config_files <- paste0("configure_flare.yml")
 #num_forecasts <- 20
 num_forecasts <- 34 * 7 - 1
 days_between_forecasts <- 1
-forecast_horizon <- 4 #32
+forecast_horizon <- 35 #32
 starting_date <- as_date("2021-03-01")
 second_date <- starting_date + months(1) - days(days_between_forecasts)
 
@@ -87,7 +87,7 @@ for(j in 1:length(sites)){
     config$run_config$restart_file <- NA
     run_config <- config$run_config
     yaml::write_yaml(run_config, file = file.path(config$file_path$configuration_directory, configure_run_file))
-  }else{
+  } else {
     config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
     config$file_path$forecast_output_directory <- file.path(lake_directory, "forecasts", config$location$site_id, config$run_config$sim_name)
 
@@ -174,6 +174,18 @@ for(j in 1:length(sites)){
       forecast_dir <- NULL
     }
 
+    # mCatch for missing files
+    if(i > 1) {
+      file_chk <- length(list.files(forecast_dir)) > 0
+    }
+
+    # If no NOAA files - skips to next day
+    if(!file_chk) {
+      message("No NOAA files for ", forecast_start_dates[i])
+      config$run_config$forecast_start_datetime <- paste0(forecast_start_dates[i+1], " 00:00:00")
+      next
+    }
+
     noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
                                                            forecast_model = config$met$forecast_met_model)
 
@@ -190,11 +202,18 @@ for(j in 1:length(sites)){
 
     source(file.path(lake_directory, "workflows", config_set_name, "forecast_inflows.R"))
 
-    inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
-                                                             forecast_model = config$inflow$forecast_inflow_model)
+    if(config$run_config$forecast_horizon > 0) {
+      inflow_forecast_path <- file.path(config$inflow$forecast_inflow_model, config$location$site_id,
+                                        lubridate::as_date(forecast_start_datetime), paste0("0", lubridate::hour(forecast_start_datetime)))
+    } else {
+      inflow_forecast_path <- NULL
+    }
+
+    # inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
+    #                                                          forecast_model = config$inflow$forecast_inflow_model)
 
     if(!is.null(inflow_forecast_path)){
-      FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path)
+      # FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path)
       inflow_file_dir <- file.path(config$file_path$noaa_directory,inflow_forecast_path)
     }else{
       inflow_file_dir <- NULL
@@ -208,6 +227,7 @@ for(j in 1:length(sites)){
 
     inf <- read.csv(inflow_outflow_files$inflow_file_names[1])
     tail(inf)
+
 
     #Need to remove the 00 ensemble member because it only goes 16-days in the future
     met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
@@ -312,7 +332,7 @@ for(j in 1:length(sites)){
     restart_date <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) + lubridate::days(1))
     config <- FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = forecast_horizon, day_advance = days_between_forecasts)
     file.copy(from = file.path(config$file_path$restart_directory, configure_run_file),
-              to = file.path(config$file_path$restart_directory, paste0("configure_run_", restart_date, ".yml")))
+              to = file.path(config$file_path$restart_directory, paste0("configure_run_", restart_date, ".yml")), overwrite = TRUE)
 
     # unlink(config$run_config$restart_file)
     unlink(forecast_dir, recursive = TRUE)
