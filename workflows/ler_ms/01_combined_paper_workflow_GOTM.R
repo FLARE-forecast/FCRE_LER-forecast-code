@@ -7,13 +7,14 @@
 library(magrittr)
 library(dplyr)
 library(lubridate)
+library(readr)
 set.seed(100)
 config_set_name <- "ler_ms"
 run_ler_flare <- TRUE
 run_clim_null <- FALSE
 run_persistence_null <- FALSE
-start_from_scratch <- TRUE
-time_start_index <- 1
+start_from_scratch <- FALSE
+time_start_index <- 54
 #Set use_archive = FALSE unless you have read/write credentials for the remote
 #s3 bucket that is set up for running FLARE.
 use_archive <- FALSE
@@ -22,7 +23,6 @@ model <- "GOTM"
 ncore <- parallel::detectCores() - 1
 lake_directory <- here::here()
 source(file.path(lake_directory, "R","forecast_inflow_outflows.R"))
-
 
 if(use_archive){
   use_s3 <- FALSE
@@ -88,16 +88,20 @@ for(j in 1:length(sites)){
     run_config <- config$run_config
     yaml::write_yaml(run_config, file = file.path(config$file_path$configuration_directory, configure_run_file))
   } else {
-    config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
-    config$file_path$forecast_output_directory <- file.path(lake_directory, "forecasts", config$location$site_id, config$run_config$sim_name)
 
-    restart_files <- list.files(config$file_path$forecast_output_directory, "*.nc", full.names = FALSE)
-    restart_files <- restart_files[nchar(restart_files) > 40]
-    n_let <- nchar(paste0(config$run_config$sim_name, "_H_"))
-    dates <- substr(restart_files, n_let+1, n_let+10)
-    dates <- gsub("_", "-", dates)
-    config$run_config <- yaml::read_yaml(file.path(config$file_path$restart_directory, paste0("configure_run_", dates[length(dates)], ".yml")))
+    config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
     time_start_index <- grep(as.Date(config$run_config$forecast_start_datetime), forecast_start_dates)
+
+    # config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
+    # config$file_path$forecast_output_directory <- file.path(lake_directory, "forecasts", config$location$site_id, config$run_config$sim_name)
+    #
+    # restart_files <- list.files(config$file_path$forecast_output_directory, "*.nc", full.names = FALSE)
+    # restart_files <- restart_files[nchar(restart_files) > 40]
+    # n_let <- nchar(paste0(config$run_config$sim_name, "_H_"))
+    # dates <- substr(restart_files, n_let+1, n_let+10)
+    # dates <- gsub("_", "-", dates)
+    # config$run_config <- yaml::read_yaml(file.path(config$file_path$restart_directory, paste0("configure_run_", dates[length(dates)], ".yml")))
+    # time_start_index <- grep(as.Date(config$run_config$forecast_start_datetime), forecast_start_dates)
   }
 
   config$da_setup$ensemble_size <- ensemble_size
@@ -206,7 +210,7 @@ for(j in 1:length(sites)){
 
     if(config$run_config$forecast_horizon > 0) {
       inflow_forecast_path <- file.path(config$inflow$forecast_inflow_model, config$location$site_id,
-                                        lubridate::as_date(forecast_start_datetime), paste0("0", lubridate::hour(forecast_start_datetime)))
+                                        lubridate::as_date(config$run_config$forecast_start_datetime), paste0("0", lubridate::hour(config$run_config$forecast_start_datetime)))
     } else {
       inflow_forecast_path <- NULL
     }
