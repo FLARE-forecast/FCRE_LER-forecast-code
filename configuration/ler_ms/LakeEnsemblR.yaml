@@ -88,7 +88,7 @@ model_parameters:
       sediment/sed_heat_model: 1
       sediment/n_zones: 2
       sediment/zone_heights:
-         - 5
+         - 5.0
          - 9.5
       sediment/sed_temp_mean:
          - 10.0
