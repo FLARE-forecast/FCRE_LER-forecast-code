@@ -8,8 +8,8 @@ library(magrittr)
 library(dplyr)
 library(lubridate)
 set.seed(100)
-config_set_name <- "ler_ms"
-run_ler_flare <- TRUE
+config_set_name <- "default"
+run_ler_flare <- FALSE
 run_clim_null <- FALSE
 run_persistence_null <- FALSE
 start_from_scratch <- TRUE
@@ -34,14 +34,14 @@ if(use_archive){
 }
 
 
-sim_names <- paste0("ms1_ler_flare_", model)
+sim_names <- "default"
 config_files <- paste0("configure_flare.yml")
 
 #num_forecasts <- 20
 num_forecasts <- 34 * 7 - 1
 days_between_forecasts <- 1
 forecast_horizon <- 35 #32
-starting_date <- as_date("2021-03-01")
+starting_date <- as_date("2021-02-01")
 second_date <- starting_date + months(1) - days(days_between_forecasts)
 
 start_dates <- rep(NA, num_forecasts)
@@ -88,16 +88,20 @@ for(j in 1:length(sites)){
     run_config <- config$run_config
     yaml::write_yaml(run_config, file = file.path(config$file_path$configuration_directory, configure_run_file))
   } else {
-    config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
-    config$file_path$forecast_output_directory <- file.path(lake_directory, "forecasts", config$location$site_id, config$run_config$sim_name)
 
-    restart_files <- list.files(config$file_path$forecast_output_directory, "*.nc", full.names = FALSE)
-    restart_files <- restart_files[nchar(restart_files) > 40]
-    n_let <- nchar(paste0(config$run_config$sim_name, "_H_"))
-    dates <- substr(restart_files, n_let+1, n_let+10)
-    dates <- gsub("_", "-", dates)
-    config$run_config <- yaml::read_yaml(file.path(config$file_path$restart_directory, paste0("configure_run_", dates[length(dates)], ".yml")))
+    config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
     time_start_index <- grep(as.Date(config$run_config$forecast_start_datetime), forecast_start_dates)
+
+    # config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
+    # config$file_path$forecast_output_directory <- file.path(lake_directory, "forecasts", config$location$site_id, config$run_config$sim_name)
+    #
+    # restart_files <- list.files(config$file_path$forecast_output_directory, "*.nc", full.names = FALSE)
+    # restart_files <- restart_files[nchar(restart_files) > 40]
+    # n_let <- nchar(paste0(config$run_config$sim_name, "_H_"))
+    # dates <- substr(restart_files, n_let+1, n_let+10)
+    # dates <- gsub("_", "-", dates)
+    # config$run_config <- yaml::read_yaml(file.path(config$file_path$restart_directory, paste0("configure_run_", dates[length(dates)], ".yml")))
+    # time_start_index <- grep(as.Date(config$run_config$forecast_start_datetime), forecast_start_dates)
   }
 
   config$da_setup$ensemble_size <- ensemble_size
@@ -195,18 +199,18 @@ for(j in 1:length(sites)){
     dir.create(file.path(lake_directory, "flare_tempdir", config$location$site_id,
                          config$run_config$sim_name), recursive = TRUE, showWarnings = FALSE)
 
-    met_out <- FLAREr::generate_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
+    met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
                                           out_dir = config$file_path$execute_directory,
                                           forecast_dir = forecast_dir,
                                           config = config)
     met <- read.csv(met_out$filenames[1])
-    tail(met$datetime)
+    tail(met)
 
-    source(file.path(lake_directory, "workflows", config_set_name, "forecast_inflows.R"))
+    source(file.path(lake_directory, "workflows", "ler_ms", "forecast_inflows.R"))
 
     if(config$run_config$forecast_horizon > 0) {
       inflow_forecast_path <- file.path(config$inflow$forecast_inflow_model, config$location$site_id,
-                                        lubridate::as_date(forecast_start_datetime), paste0("0", lubridate::hour(forecast_start_datetime)))
+                                        lubridate::as_date(config$run_config$forecast_start_datetime), paste0("0", lubridate::hour(config$run_config$forecast_start_datetime)))
     } else {
       inflow_forecast_path <- NULL
     }
@@ -221,7 +225,7 @@ for(j in 1:length(sites)){
       inflow_file_dir <- NULL
     }
 
-    inflow_outflow_files <- FLAREr::create_inflow_outflow_files(inflow_file_dir = inflow_file_dir,
+    inflow_outflow_files <- FLAREr::create_glm_inflow_outflow_files(inflow_file_dir = inflow_file_dir,
                                                                 inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),
                                                                 working_directory = config$file_path$execute_directory,
                                                                 config = config,
@@ -279,11 +283,11 @@ for(j in 1:length(sites)){
     # da_method = config$da_setup$da_method
     # par_fit_method = config$da_setup$par_fit_method
     # debug = TRUE
-    config$output_settings$diagnostics_names <- NULL
+    # config$output_settings$diagnostics_names <- NULL
 
     ##' Run the forecasts
     message("Starting Data Assimilation and Forecasting for ", config$model_settings$model)
-    da_forecast_output <- FLAREr::run_da_forecast_all(states_init = init$states,
+    da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
                                                       pars_init = init$pars,
                                                       aux_states_init = init$aux_states_init,
                                                       obs = obs,
