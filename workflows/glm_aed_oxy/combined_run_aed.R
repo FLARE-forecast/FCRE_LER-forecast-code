@@ -2,22 +2,25 @@ library(tidyverse)
 library(lubridate)
 set.seed(100)
 
+remotes::install_github("rqthomas/GLM3r")
 Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
 
 lake_directory <- here::here()
 
-starting_index <- 83
+
+starting_index <- 1
 
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 sapply(files.sources, source)
 
-sim_names <- "ms_glmead_flare"
-config_set_name <- "glm_aed_ms"
+sim_names <- "ms_glmead_oxy"
+config_set_name <- "glm_aed_oxy"
 
 config_files <- paste0("configure_flare_glm_aed.yml")
 
 num_forecasts <- 52 * 3 - 3
+#num_forecasts <- 2 #52 * 3 - 3
 #num_forecasts <- 1#19 * 7 + 1
 days_between_forecasts <- 7
 forecast_horizon <- 16 #32
@@ -25,6 +28,8 @@ starting_date <- as_date("2018-07-20")
 #second_date <- as_date("2020-12-01") - days(days_between_forecasts)
 #starting_date <- as_date("2018-07-20")
 second_date <- as_date("2019-01-01") - days(days_between_forecasts)
+
+#second_date <- as_date("2018-08-01") - days(days_between_forecasts)
 
 start_dates <- rep(NA, num_forecasts)
 start_dates[1:2] <- c(starting_date, second_date)
@@ -115,10 +120,6 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
                      file = "Dissolved_CO2_CH4_Virginia_Reservoirs.csv",
                      lake_directory)
 
-https_file <- "https://raw.githubusercontent.com/cayelan/FCR-GLM-AED-Forecasting/master/FCR_2013_2019GLMHistoricalRun_GLMv3beta/inputs/FCR_SSS_inflow_2013_2021_20211102_allfractions_2DOCpools.csv"
-download.file(https_file,
-              file.path(config$file_path$execute_directory, basename(https_file)))
-
 
 #' Clean up observed meterology
 
@@ -178,10 +179,17 @@ if(starting_index == 1){
 #for(i in 1:1){
 for(i in starting_index:length(forecast_start_dates)){
 
+  https_file <- "https://raw.githubusercontent.com/cayelan/FCR-GLM-AED-Forecasting/master/FCR_2013_2019GLMHistoricalRun_GLMv3beta/inputs/FCR_SSS_inflow_2013_2021_20211102_allfractions_2DOCpools.csv"
+  if(!file.exists(file.path(config$file_path$execute_directory, basename(https_file)))){
+  download.file(https_file,
+                file.path(config$file_path$execute_directory, basename(https_file)))
+  }
+
+
     config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
 
     num_dates_skipped <- 1
-    while(!lubridate::as_date(config$run_config$forecast_start_datetime) %in% lubridate::as_date(available_dates) & i <= length(forecast_start_dates)){
+    while(!lubridate::as_date(config$run_config$forecast_start_datetime) %in% lubridate::as_date(available_dates) & (i <= length(forecast_start_dates) & i > 1)){
       print("here")
       FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file = NA, new_horizon = forecast_horizon, day_advance = num_dates_skipped * days_between_forecasts, new_start_datetime = FALSE)
       config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)

@@ -14,7 +14,8 @@ extract_secchi <- function(fname,
     pivot_longer(cols = -c(timestamp), names_to = "variable", values_to = "value") %>%
     mutate(depth = NA) %>%
     filter(!is.na(value)) %>%
-    select(timestamp , depth, value, variable)
+    select(timestamp , depth, value, variable) %>%
+    distinct()
 
   return(d)
 }

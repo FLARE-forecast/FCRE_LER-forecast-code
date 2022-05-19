@@ -54,6 +54,8 @@ met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_p
                                           forecast_dir = forecast_dir,
                                           config = config)
 
+met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
+
 
 inflow_outflow_files <- FLAREr::create_glm_inflow_outflow_files(inflow_file_dir = inflow_file_dir,
                                                                 inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),

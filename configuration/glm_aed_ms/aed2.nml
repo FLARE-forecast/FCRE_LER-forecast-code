@@ -12,7 +12,7 @@
 !-------------------------------------------------------------------------------
 &aed_models
    models = 'aed_sedflux',
-            'aed_noncohesive',
+            !'aed_noncohesive',
             'aed_oxygen',
             'aed_carbon',
             'aed_silica',
@@ -253,7 +253,7 @@
    n2o_piston_model = 4
   !-- Annamox
    Rnh4no2 = 0.001
-   Ranammox = 0.001
+   Kanammox = 0.001
    Kanmx_nit = 1.320343969
    Kanmx_amm = 0.866665508
   !-- De-nitrification

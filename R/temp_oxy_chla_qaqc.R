@@ -30,11 +30,9 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   # either be replaced with NA and flagged (if between 2018-10-01 and 2019-03-01) or just flagged (otherwise)
   EXO_FOULING_FACTOR <- 4
 
-
-
   # read catwalk data and maintenance log
   # NOTE: date-times throughout this script are processed as UTC
-  catdata <- readr::read_csv(realtime_file, skip = 4, col_names = CATDATA_COL_NAMES,
+  catdata <- readr::read_csv(realtime_file, skip = 1, col_names = CATDATA_COL_NAMES,
                       col_types = readr::cols(.default = readr::col_double(), DateTime = readr::col_datetime()))
 
   log <- readr::read_csv(maintenance_file, col_types = readr::cols(
@@ -558,8 +556,6 @@ temp_oxy_chla_qaqc <- function(realtime_file,
              d_exo_chla,d_exo_bgapc)
 
   d <- d %>% mutate(depth = as.numeric(depth))
-
-
 
   # write to output file
   return(d)
