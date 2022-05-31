@@ -108,39 +108,6 @@ for(j in 1:length(sites)){
 
   depth_bins <- config$model_settings$modeled_depths
 
-  # if(!use_archive){
-  #   message("    Downloading NEON data")
-  #   neonstore::neon_download(product = "DP1.20264.001", site = sites[j], start_date = NA)
-  # }
-
-  # neonstore_dir <-  file.path(lake_directory, "data_raw","neonstore")
-  #
-  # dir.create(neonstore_dir,showWarnings = FALSE)
-  # Sys.setenv("NEONSTORE_DB" = neonstore_dir)
-  # Sys.setenv("NEONSTORE_HOME" = neonstore_dir)
-
-  ##'
-  # Process the NEON data for the site selected in the original .yml file
-
-  # message("    Processing NEON data")
-  #
-  # edi_file <- site_edi_profile[str_detect(site_edi_profile, sites[j])]
-  #
-  # FLARErLER::get_edi_file(edi_https = edi_url[str_detect(site_edi_profile, sites[j])],
-  #                      file = edi_file,
-  #                      lake_directory)
-  #
-  # profiler_data <- readr::read_csv(file.path(lake_directory,"data_raw",edi_file))
-  #
-  # cleaned_insitu_file <- buoy_qaqc(forecast_site = config$location$site_id,
-  #                                  processed_filename = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
-  #                                  depth_bins,
-  #                                  profiler_data = profiler_data,
-  #                                  release = NA)
-  #
-  # FLARErLER::put_targets(sites[j],
-  #                     cleaned_insitu_file = cleaned_insitu_file, use_s3 = use_s3)
-
   ##` Download NOAA forecasts`
 
   message("    Downloading NOAA data")
