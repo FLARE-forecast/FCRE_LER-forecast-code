@@ -8,14 +8,19 @@ if(file.exists("~/.aws")){
                 "Consider renaming these so that automated upload will work"))
 }
 
+config_set_name <- "default"
 lake_directory <- here::here()
 update_run_config <- TRUE
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
-sapply(files.sources, source)
+sapply(files.sources[!grepl("Rnoaa4cast_download.R", files.sources)], source)
+# sapply(files.sources, source)
 
 configure_run_file <- "configure_run.yml"
 
 config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+config$model_settings$model <- "GLM"
+config$run_config$sim_name <- "test"
+config$run_config$use_s3 <- FALSE
 
 config <- FLAREr::get_restart_file(config, lake_directory)
 
@@ -43,6 +48,7 @@ if(!is.null(inflow_forecast_path)){
 
 
 pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
+pars_config <- pars_config[pars_config$model == config$model_settings$model, ]
 obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$obs_config_file), col_types = readr::cols())
 states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$states_config_file), col_types = readr::cols())
 
@@ -89,7 +95,7 @@ init <- FLAREr::generate_initial_conditions(states_config,
                                             restart_file = config$run_config$restart_file,
                                             historical_met_error = met_out$historical_met_error)
 #Run EnKF
-da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
+da_forecast_output <- FLAREr::run_da_forecast_all(states_init = init$states,
                                               pars_init = init$pars,
                                               aux_states_init = init$aux_states_init,
                                               obs = obs,
