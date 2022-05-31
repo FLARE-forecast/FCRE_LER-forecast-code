@@ -1,8 +1,7 @@
 # FCRE_LER-forecast-code
 
 Run FLARE forecasts using [LakeEnsemblR](https://github.com/tadhg-moore/LakeEnsemblR/tree/flare) for Falling Creek Reservoir, VA, USA.
-![LakeEnsemblR logo](https://raw.githubusercontent.com/tadhg-moore/LakeEnsemblR/flare/images/logo.png "LakeEnsemblR")
-<a href="url"><img src="https://raw.githubusercontent.com/tadhg-moore/LakeEnsemblR/flare/images/logo.png" alt="LakeEnsemblR logo" align="right" height="220" width="220" >
+<img src="https://raw.githubusercontent.com/tadhg-moore/LakeEnsemblR/flare/images/logo.png" alt="LakeEnsemblR logo" align="right" height="220" width="220">
 
 To run these forecasts and analyses on your computer you will need to clone this repository onto your computer.
 
