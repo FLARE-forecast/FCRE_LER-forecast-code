@@ -1,13 +1,13 @@
-# LAKE-forecast-code
+# FCRE_LER-forecast-code
 
-To run this example it is recommended to git clone this project using RStudio's "New Project..." feature. Click "File > New Project... > Version Control > Git " and input the url from this repository in "Repository URL".
+Run FLARE forecasts using [LakeEnsemblR](https://github.com/tadhg-moore/LakeEnsemblR/tree/flare) for Falling Creek Reservoir, VA, USA.
+![LakeEnsemblR logo](https://raw.githubusercontent.com/tadhg-moore/LakeEnsemblR/flare/images/logo.png "LakeEnsemblR")
+<a href="url"><img src="https://raw.githubusercontent.com/tadhg-moore/LakeEnsemblR/flare/images/logo.png" alt="LakeEnsemblR logo" align="right" height="220" width="220" >
 
-After the project has cloned, then you will need to pull in the raw data which is streaming in near real-time from the sensors at Falling Creek Reservoir, VA, USA to GitHub.
+To run these forecasts and analyses on your computer you will need to clone this repository onto your computer.
 
-To do this you will need to run the "01_get_data.R" which will download the data from GitHub.
+After the project has cloned, then you will need to install the necessary R packages, pull in the raw data from the sensors at Falling Creek Reservoir, process the data, and then run the forecasts. The scripts to run this forecasting workflow are located in `workflows/ler-ms`.
 
-This will clone in the data which is required to run the forecast. Then you can follow through each step of the forecast:
-- 02_process_data.R
-- 03_run_inflow_forecast.R
-- 04_run_flarer_forecast.R
-- 05_visualize.R
+To run the forecast for GLM you will need to execute the following scripts:
+- install_packages.R
+- 01_combined_paper_workflow_GLM.R
