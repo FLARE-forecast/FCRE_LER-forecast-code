@@ -77,9 +77,9 @@ model_parameters:
       inflow/num_inflows: 1
       outflow/num_outlet: 1
       inflow/inflow_vars:
-         - 'FLOW'
-         - 'TEMP'
-         - 'SALT'
+        - '''FLOW'''
+        - '''TEMP'''
+        - '''SALT'''
       inflow/inflow_varnum: 3
       output/out_dir: 'output'
       output/nsave: 1

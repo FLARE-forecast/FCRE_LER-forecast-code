@@ -49,7 +49,7 @@ forecast_inflows_outflows <- function(inflow_obs,
     dplyr::filter(time >= noaa_met_time[1] - lubridate::days(1) & time < noaa_met_time[1])
 
   init_flow_temp <- inflow %>%
-    dplyr::filter(time == lubridate::as_date(noaa_met_time[1]) - lubridate::days(1))
+    filter(time == lubridate::as_date(noaa_met_time[1]) - lubridate::days(1))
 
 
 
@@ -154,6 +154,7 @@ forecast_inflows_outflows <- function(inflow_obs,
       dplyr::mutate_at(dplyr::vars(c("FLOW", "TEMP", "SALT")), list(~round(., 4))) %>%
       dplyr::mutate(type = "inflow",
                     inflow_num = 1)
+    #slice(-1)
 
     if(model_name == "glm_aed"){
 
@@ -175,9 +176,9 @@ forecast_inflows_outflows <- function(inflow_obs,
       curr_met_daily <- curr_met_daily %>%
         dplyr::mutate(DOY = yday(time),
                       OXY_oxy = rMR::Eq.Ox.conc(TEMP, elevation.m = 506, #creating OXY_oxy column using RMR package, assuming that oxygen is at 100% saturation in this very well-mixed stream
-                                  bar.press = NULL, bar.units = NULL,
-                                  out.DO.meas = "mg/L",
-                                  salinity = 0, salinity.units = "pp.thou"),
+                                                bar.press = NULL, bar.units = NULL,
+                                                out.DO.meas = "mg/L",
+                                                salinity = 0, salinity.units = "pp.thou"),
                       OXY_oxy = OXY_oxy *1000*(1/32))
 
 

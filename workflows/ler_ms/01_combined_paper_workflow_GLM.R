@@ -14,10 +14,8 @@ run_clim_null <- FALSE
 run_persistence_null <- FALSE
 start_from_scratch <- TRUE
 time_start_index <- 1
-#Set use_archive = FALSE unless you have read/write credentials for the remote
-#s3 bucket that is set up for running FLARE.
-use_archive <- FALSE
-ensemble_size <- 200
+
+ensemble_size <- 100
 model <- "GLM"
 ncore <- parallel::detectCores() - 1
 lake_directory <- here::here()
@@ -42,7 +40,7 @@ num_forecasts <- 34 * 7 - 1
 days_between_forecasts <- 1
 forecast_horizon <- 35 #32
 starting_date <- as_date("2021-03-01")
-second_date <- starting_date + months(1) - days(days_between_forecasts)
+second_date <- as_date("2021-07-01") #starting_date + months(1) - days(days_between_forecasts)
 
 start_dates <- rep(NA, num_forecasts)
 start_dates[1:2] <- c(starting_date, second_date)
@@ -58,7 +56,7 @@ forecast_start_dates <- as_date(c(NA, forecast_start_dates[-1]))
 
 configure_run_file <- "configure_run.yml"
 
-for(j in 1:length(sites)){
+j = 1
 
   message(paste0("Running site: ", sites[j]))
 
@@ -79,6 +77,8 @@ for(j in 1:length(sites)){
 
     unlink(config$file_path$execute_directory, recursive = TRUE)
     config <- FLARErLER::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+
+
 
 
     config$run_config$start_datetime <- as.character(paste0(start_dates[1], " 00:00:00"))
@@ -114,9 +114,73 @@ for(j in 1:length(sites)){
 
   cycle <- "00"
 
+  cycle <- "00"
+
+  for(i in 1:length(forecast_start_dates)){
+    noaa_forecast_path <- file.path(config$met$forecast_met_model, config$location$site_id, forecast_start_dates[i], "00")
+    if(length(list.files(file.path(lake_directory,"drivers", noaa_forecast_path))) == 0){
+      FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
+    }
+  }
+
+  available_dates <- list.files(file.path(lake_directory,"drivers","noaa","NOAAGEFS_1hr","fcre"))
+
+
   if(!use_archive){
     FLARErLER::get_stacked_noaa(lake_directory, config, averaged = TRUE)
   }
+
+
+  FLAREr::get_git_repo(lake_directory,
+                       directory = config_obs$realtime_insitu_location,
+                       git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+
+  FLAREr::get_git_repo(lake_directory,
+                       directory = config_obs$realtime_met_station_location,
+                       git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+
+  FLAREr::get_git_repo(lake_directory,
+                       directory = config_obs$realtime_inflow_data_location,
+                       git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+
+  FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/5/c1b1f16b8e3edbbff15444824b65fe8f",
+                       file = config_obs$insitu_obs_fname[2],
+                       lake_directory)
+
+  FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/198/8/336d0a27c4ae396a75f4c07c01652985",
+                       file = config_obs$secchi_fname,
+                       lake_directory)
+
+  cleaned_met_file <- met_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
+                               qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
+                               cleaned_met_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id,paste0("observed-met_",config_obs$site_id,".nc")),
+                               input_file_tz = "EST",
+                               nldas = NULL)
+
+  #' Clean up observed inflow
+
+  cleaned_inflow_file <- inflow_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[1]),
+                                     qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[2]),
+                                     nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
+                                     silica_file = file.path(config_obs$file_path$data_directory,  config_obs$silica_fname),
+                                     co2_ch4 = file.path(config_obs$file_path$data_directory, config_obs$ch4_fname),
+                                     cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id, paste0(config_obs$site_id,"-targets-inflow.csv")),
+                                     input_file_tz = 'EST')
+
+  #' Clean up observed insitu measurements
+
+  cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file_path$data_directory,config_obs$insitu_obs_fname),
+                                      data_location = config_obs$file_path$data_directory,
+                                      maintenance_file = file.path(config_obs$file_path$data_directory,config_obs$maintenance_file),
+                                      ctd_fname = file.path(config_obs$file_path$data_directory, config_obs$ctd_fname),
+                                      nutrients_fname =  file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
+                                      secchi_fname = file.path(config_obs$file_path$data_directory, config_obs$secchi_fname),
+                                      ch4_fname = file.path(config_obs$file_path$data_directory, config_obs$ch4_fname),
+                                      cleaned_insitu_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
+                                      lake_name_code = config_obs$site_id,
+                                      config = config_obs)
+
+
 
   for(i in time_start_index:length(forecast_start_dates)){
 
@@ -134,8 +198,6 @@ for(j in 1:length(sites)){
       noaa_forecast_path <- FLARErLER::get_driver_forecast_path(config,
                                                              forecast_model = config$met$forecast_met_model)
       if(!use_archive){
-        FLARErLER::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
-      }
       forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
     }else{
       forecast_dir <- NULL
@@ -161,6 +223,7 @@ for(j in 1:length(sites)){
 
     dir.create(file.path(lake_directory, "flare_tempdir", config$location$site_id,
                          config$run_config$sim_name), recursive = TRUE, showWarnings = FALSE)
+
 
     met_out <- FLARErLER::generate_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
                                           out_dir = config$file_path$execute_directory,
@@ -315,5 +378,4 @@ for(j in 1:length(sites)){
       }
     }
   }
-}
 

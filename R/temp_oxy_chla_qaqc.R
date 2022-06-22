@@ -33,7 +33,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   # read catwalk data and maintenance log
   # NOTE: date-times throughout this script are processed as UTC
   catdata <- readr::read_csv(realtime_file, skip = 1, col_names = CATDATA_COL_NAMES,
-                      col_types = readr::cols(.default = readr::col_double(), DateTime = readr::col_datetime()))
+                             col_types = readr::cols(.default = readr::col_double(), DateTime = readr::col_datetime()))
 
   log <- readr::read_csv(maintenance_file, col_types = readr::cols(
     .default = readr::col_character(),
@@ -57,19 +57,19 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   # replace negative DO values with 0
   catdata <- catdata %>%
     dplyr::mutate(Flag_DO_1 = ifelse((! is.na(EXODO_mgL_1) & EXODO_mgL_1 < 0)
-                              | (! is.na(EXODOsat_percent_1) & EXODOsat_percent_1 < 0), 3, Flag_DO_1)) %>%
+                                     | (! is.na(EXODOsat_percent_1) & EXODOsat_percent_1 < 0), 3, Flag_DO_1)) %>%
     dplyr::mutate(EXODO_mgL_1 = ifelse(EXODO_mgL_1 < 0, 0, EXODO_mgL_1)) %>%
     dplyr::mutate(EXODOsat_percent_1 = ifelse(EXODOsat_percent_1 <0, 0, EXODOsat_percent_1))
 
   catdata <- catdata %>%
     dplyr::mutate(Flag_DO_5 = ifelse((! is.na(RDO_mgL_5) & RDO_mgL_5 < 0)
-                              | (! is.na(RDOsat_percent_5) & RDOsat_percent_5 < 0), 3, Flag_DO_5)) %>%
+                                     | (! is.na(RDOsat_percent_5) & RDOsat_percent_5 < 0), 3, Flag_DO_5)) %>%
     dplyr::mutate(RDO_mgL_5 = ifelse(RDO_mgL_5 < 0, 0, RDO_mgL_5)) %>%
     dplyr::mutate(RDOsat_percent_5 = ifelse(RDOsat_percent_5 < 0, 0, RDOsat_percent_5))
 
   catdata <- catdata %>%
     dplyr::mutate(Flag_DO_9 = ifelse((! is.na(RDO_mgL_9) & RDO_mgL_9 < 0)
-                              | (! is.na(RDOsat_percent_9) & RDOsat_percent_9 < 0), 3, Flag_DO_9)) %>%
+                                     | (! is.na(RDOsat_percent_9) & RDOsat_percent_9 < 0), 3, Flag_DO_9)) %>%
     dplyr::mutate(RDO_mgL_9 = ifelse(RDO_mgL_9 < 0, 0, RDO_mgL_9)) %>%
     dplyr::mutate(RDOsat_percent_9 = ifelse(RDOsat_percent_9 < 0, 0, RDOsat_percent_9))
 
@@ -145,7 +145,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
       {
         DO_recovery_time <- (catdata %>%
                                dplyr::filter(DateTime > end &
-                                        abs(catdata[[DO_MGL_COLS[j]]] - last_DO_before_maintenance) <= DO_RECOVERY_THRESHOLD)
+                                               abs(catdata[[DO_MGL_COLS[j]]] - last_DO_before_maintenance) <= DO_RECOVERY_THRESHOLD)
         )$DateTime[1]
 
         # if the recovery time cannot be found, then raise a warning and replace post-maintenance DO values until the end of
@@ -182,27 +182,27 @@ temp_oxy_chla_qaqc <- function(realtime_file,
 
   catdata <- catdata %>%
     dplyr::mutate(Flag_Chla = ifelse(DateTime >= ymd("2018-10-01") & DateTime < ymd("2019-03-01") &
-                                (! is.na(EXOChla_RFU_1) & abs(EXOChla_RFU_1 - Chla_RFU_1_mean) > Chla_RFU_1_threshold |
-                                   ! is.na(EXOChla_ugL_1) & abs(EXOChla_ugL_1 - Chla_ugL_1_mean) > Chla_ugL_1_threshold),
-                              4, Flag_Chla)) %>%
+                                       (! is.na(EXOChla_RFU_1) & abs(EXOChla_RFU_1 - Chla_RFU_1_mean) > Chla_RFU_1_threshold |
+                                          ! is.na(EXOChla_ugL_1) & abs(EXOChla_ugL_1 - Chla_ugL_1_mean) > Chla_ugL_1_threshold),
+                                     4, Flag_Chla)) %>%
     dplyr::mutate(Flag_Phyco = ifelse(DateTime >= ymd("2018-10-01") & DateTime < ymd("2019-03-01") &
-                                 (! is.na(EXOBGAPC_RFU_1) & abs(EXOBGAPC_RFU_1 - BGAPC_RFU_1_mean) > BGAPC_RFU_1_threshold |
-                                    ! is.na(EXOBGAPC_ugL_1) & abs(EXOBGAPC_ugL_1 - BGAPC_ugL_1_mean) > BGAPC_ugL_1_threshold),
-                               4, Flag_Phyco)) %>%
+                                        (! is.na(EXOBGAPC_RFU_1) & abs(EXOBGAPC_RFU_1 - BGAPC_RFU_1_mean) > BGAPC_RFU_1_threshold |
+                                           ! is.na(EXOBGAPC_ugL_1) & abs(EXOBGAPC_ugL_1 - BGAPC_ugL_1_mean) > BGAPC_ugL_1_threshold),
+                                      4, Flag_Phyco)) %>%
     dplyr::mutate(EXOChla_RFU_1 = ifelse(DateTime >= ymd("2018-10-01") & DateTime < ymd("2019-03-01") &
-                                    abs(EXOChla_RFU_1 - Chla_RFU_1_mean) > Chla_RFU_1_threshold, NA, EXOChla_RFU_1)) %>%
+                                           abs(EXOChla_RFU_1 - Chla_RFU_1_mean) > Chla_RFU_1_threshold, NA, EXOChla_RFU_1)) %>%
     dplyr::mutate(EXOChla_ugL_1 = ifelse(DateTime >= ymd("2018-10-01") & DateTime < ymd("2019-03-01") &
-                                    abs(EXOChla_ugL_1 - Chla_ugL_1_mean) > Chla_ugL_1_threshold, NA, EXOChla_ugL_1)) %>%
+                                           abs(EXOChla_ugL_1 - Chla_ugL_1_mean) > Chla_ugL_1_threshold, NA, EXOChla_ugL_1)) %>%
     dplyr::mutate(EXOBGAPC_RFU_1 = ifelse(DateTime >= ymd("2018-10-01") & DateTime < ymd("2019-03-01") &
-                                     abs(EXOBGAPC_RFU_1 - BGAPC_RFU_1_mean) > BGAPC_RFU_1_threshold, NA, EXOBGAPC_RFU_1)) %>%
+                                            abs(EXOBGAPC_RFU_1 - BGAPC_RFU_1_mean) > BGAPC_RFU_1_threshold, NA, EXOBGAPC_RFU_1)) %>%
     dplyr::mutate(EXOBGAPC_ugL_1 = ifelse(DateTime >= ymd("2018-10-01") & DateTime < ymd("2019-03-01") &
-                                     abs(EXOBGAPC_ugL_1 - BGAPC_ugL_1_mean) > BGAPC_ugL_1_threshold, NA, EXOBGAPC_ugL_1))
+                                            abs(EXOBGAPC_ugL_1 - BGAPC_ugL_1_mean) > BGAPC_ugL_1_threshold, NA, EXOBGAPC_ugL_1))
 
   # flag EXO sonde sensor data of value above 4 * standard deviation at other times
   catdata <- catdata %>%
     dplyr::mutate(Flag_Phyco = ifelse(! is.na(EXOBGAPC_RFU_1) & abs(EXOBGAPC_RFU_1 - BGAPC_RFU_1_mean) > BGAPC_RFU_1_threshold |
-                                 ! is.na(EXOBGAPC_ugL_1) & abs(EXOBGAPC_ugL_1 - BGAPC_ugL_1_mean) > BGAPC_ugL_1_threshold,
-                               5, Flag_Phyco))
+                                        ! is.na(EXOBGAPC_ugL_1) & abs(EXOBGAPC_ugL_1 - BGAPC_ugL_1_mean) > BGAPC_ugL_1_threshold,
+                                      5, Flag_Phyco))
 
   # delete EXO_Date and EXO_Time columns
   catdata <- catdata %>% dplyr::select(-EXO_Date, -EXO_Time)
@@ -213,8 +213,8 @@ temp_oxy_chla_qaqc <- function(realtime_file,
 
   # reorder columns
   catdata <- catdata %>% dplyr::select(-RECORD, -CR6_Batt_V, -CR6Panel_Temp_C, -Flag_All, -Flag_DO_1, -Flag_DO_5,
-                                -Flag_DO_9, -Flag_Chla, -Flag_Phyco, -Flag_TDS, -EXO_wiper, -EXO_cablepower,
-                                -EXO_battery,-EXO_pressure)
+                                       -Flag_DO_9, -Flag_Chla, -Flag_Phyco, -Flag_TDS, -EXO_wiper, -EXO_cablepower,
+                                       -EXO_battery,-EXO_pressure)
 
   # replace NaNs with NAs
   catdata[is.na(catdata)] <- NA
@@ -301,48 +301,48 @@ temp_oxy_chla_qaqc <- function(realtime_file,
 
   d <- d %>%
     dplyr::mutate(day = day(TIMESTAMP),
-           year = year(TIMESTAMP),
-           hour = hour(TIMESTAMP),
-           month = month(TIMESTAMP)) %>%
+                  year = year(TIMESTAMP),
+                  hour = hour(TIMESTAMP),
+                  month = month(TIMESTAMP)) %>%
     dplyr::group_by(day, year, hour, month) %>%
     dplyr::select(-TIMESTAMP) %>%
     dplyr::summarise_all(mean, na.rm = TRUE) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(day = as.numeric(day),
-           hour = as.numeric(hour)) %>%
+                  hour = as.numeric(hour)) %>%
     dplyr::mutate(day = ifelse(as.numeric(day) < 10, paste0("0",day),day),
-           hour = ifelse(as.numeric(hour) < 10, paste0("0",hour),hour)) %>%
+                  hour = ifelse(as.numeric(hour) < 10, paste0("0",hour),hour)) %>%
     dplyr::mutate(timestamp = as_datetime(paste0(year,"-",month,"-",day," ",hour,":00:00"),tz = "UTC")) %>%
     dplyr::arrange(timestamp)
 
 
   d_therm <- d %>%
     dplyr::select(timestamp, wtr_surface, wtr_1, wtr_2, wtr_3, wtr_4, wtr_5, wtr_6,
-           wtr_7,wtr_8, wtr_9) %>%
+                  wtr_7,wtr_8, wtr_9) %>%
     dplyr::rename("0.0" = wtr_surface,
-           "1.0" = wtr_1,
-           "2.0" = wtr_2,
-           "3.0" = wtr_3,
-           "4.0" = wtr_4,
-           "5.0" = wtr_5,
-           "6.0" = wtr_6,
-           "7.0" = wtr_7,
-           "8.0" = wtr_8,
-           "9.0" = wtr_9) %>%
+                  "1.0" = wtr_1,
+                  "2.0" = wtr_2,
+                  "3.0" = wtr_3,
+                  "4.0" = wtr_4,
+                  "5.0" = wtr_5,
+                  "6.0" = wtr_6,
+                  "7.0" = wtr_7,
+                  "8.0" = wtr_8,
+                  "9.0" = wtr_9) %>%
     tidyr::pivot_longer(cols = -timestamp, names_to = "depth", values_to = "value") %>%
     dplyr::mutate(variable = "temperature",
-           method = "thermistor",
-           value = ifelse(is.nan(value), NA, value))
+                  method = "thermistor",
+                  value = ifelse(is.nan(value), NA, value))
 
 
   d_do_temp <- d %>%
     dplyr::select(timestamp, wtr_5_do, wtr_9_do) %>%
     dplyr::rename("5.0" = wtr_5_do,
-           "9.0" = wtr_9_do) %>%
+                  "9.0" = wtr_9_do) %>%
     tidyr::pivot_longer(cols = -timestamp, names_to = "depth", values_to = "value") %>%
     dplyr::mutate(variable = "temperature",
-           method = "do_sensor",
-           value = ifelse(is.nan(value), NA, value))
+                  method = "do_sensor",
+                  value = ifelse(is.nan(value), NA, value))
 
   d_exo_temp <- d %>%
     dplyr::select(timestamp, wtr_1_exo) %>%
@@ -560,4 +560,3 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   # write to output file
   return(d)
 }
-
