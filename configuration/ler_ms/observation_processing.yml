@@ -21,7 +21,7 @@ noaa_location: FCRE
 
 met_raw_obs_fname:
     - fcre-metstation-data/FCRmet.csv
-    - Met_final_2015_2020.csv
+    - Met_final_2015_2021.csv
 #specified_metfile: .na #NA #paste0(manual_data_location, "/met_full_postQAQC.csv")
 
 downscaling_coeff: fcre-manual-data/debiased.coefficients.2018_07_12_2019_07_11.RData
@@ -70,7 +70,7 @@ specified_outflow1: fcre-manual-data/FCR_spillway_outflow_SUMMED_WeirWetland_201
 
 insitu_obs_fname:
     - fcre-catwalk-data/fcre-waterquality.csv
-    - Catwalk_cleanedEDI.csv
+    - FCR_Catwalk_2018_2021.csv
 secchi_fname: Secchi_depth_2013-2020.csv
 ctd_fname: CTD_final_2013_2020.csv
 ch4_fname: Dissolved_CO2_CH4_Virginia_Reservoirs.csv

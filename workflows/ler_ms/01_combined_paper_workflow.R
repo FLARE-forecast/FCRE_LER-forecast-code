@@ -18,7 +18,8 @@ sapply(files.sources, source)
 
 
 models <- c("GLM","GOTM","Simstrat")
-models <- c("Simstrat")
+#models <- c("GOTM")
+#models <- c("Simstrat")
 config_files <- "configure_flare.yml"
 configure_run_file <- "configure_run.yml"
 config_set_name <- "ler_ms"
@@ -30,7 +31,7 @@ forecast_horizon <- 16 #32
 starting_date <- as_date("2018-07-20")
 #second_date <- as_date("2020-12-01") - days(days_between_forecasts)
 #starting_date <- as_date("2018-07-20")
-second_date <- as_date("2019-01-01") - days(days_between_forecasts)
+second_date <- as_date("2018-07-31") - days(days_between_forecasts)
 
 start_dates <- rep(NA, num_forecasts)
 start_dates[1:2] <- c(starting_date, second_date)
@@ -73,7 +74,7 @@ FLAREr::get_git_repo(lake_directory,
 
 #' Download files from EDI
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/5/3d1866fecfb8e17dc902c76436239431",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/6/a5524c686e2154ec0fd0459d46a7d1eb",
                      file = config_obs$met_raw_obs_fname[2],
                      lake_directory)
 
@@ -236,14 +237,14 @@ for(k in 1:length(models)){
 
     #Download and process observations (already done)
 
-    met_out <- FLARErLER::generate_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
+    met_out <- FLARErLER::generate_met_files_ler(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
                                              out_dir = config$file_path$execute_directory,
                                              forecast_dir = forecast_dir,
                                              config = config)
 
     met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
 
-    inflow_outflow_files <- FLARErLER::create_inflow_outflow_files(inflow_file_dir = inflow_file_dir,
+    inflow_outflow_files <- FLARErLER::create_inflow_outflow_files_ler(inflow_file_dir = inflow_file_dir,
                                                                    inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),
                                                                    working_directory = config$file_path$execute_directory,
                                                                    config = config,
@@ -260,13 +261,12 @@ for(k in 1:length(models)){
 
     model_sd <- FLAREr::initiate_model_error(config, states_config)
 
-    init <- FLARErLER::generate_initial_conditions(states_config,
+    init <- FLARErLER::generate_initial_conditions_ler(states_config,
                                                    obs_config,
                                                    pars_config,
                                                    obs,
                                                    config,
                                                    historical_met_error = met_out$historical_met_error)
-
     if(model != "GLM"){ #GOTM and Simstrat have different diagnostics
       config$output_settings$diagnostics_names <- NULL
     }
@@ -278,7 +278,7 @@ for(k in 1:length(models)){
       outflow_file_names <- inflow_outflow_files$outflow_file_name
     }
     #Run EnKF
-    da_forecast_output <- FLARErLER::run_da_forecast_all(states_init = init$states,
+    da_forecast_output <- FLARErLER::run_da_forecast_ler(states_init = init$states,
                                                          pars_init = init$pars,
                                                          aux_states_init = init$aux_states_init,
                                                          obs = obs,
@@ -299,9 +299,18 @@ for(k in 1:length(models)){
 
     # Save forecast
 
-    saved_file <- FLARErLER::write_forecast_netcdf(da_forecast_output = da_forecast_output,
+    #saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
+    saved_file <- FLARErLER::write_forecast_netcdf_ler(da_forecast_output = da_forecast_output,
                                                    forecast_output_directory = config$file_path$forecast_output_directory,
                                                    use_short_filename = TRUE)
+
+    forecast_file <- FLARErLER::write_forecast_csv_ler(da_forecast_output = da_forecast_output,
+                                                forecast_output_directory = config$file_path$forecast_output_directory,
+                                                use_short_filename = TRUE)
+
+    FLAREr::generate_forecast_score(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
+                                        forecast_file = forecast_file,
+                                        output_directory = config$file_path$forecast_output_directory)
 
     #Create EML Metadata
     eml_file_name <- FLAREr::create_flare_metadata(file_name = saved_file,
@@ -310,7 +319,7 @@ for(k in 1:length(models)){
     #rm(da_forecast_output)
     #gc()
     message("Generating plot")
-    FLARErLER::plotting_general_2(file_name = saved_file,
+    FLAREr::plotting_general_2(file_name = saved_file,
                                   target_file = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
                                   ncore = 2,
                                   obs_csv = FALSE)

@@ -42,7 +42,7 @@ model_settings:
    base_ler_yaml: LakeEnsemblR.yaml
    ler_bathymetry_file: LakeEnsemblR_bathymetry_standard.csv
    use_ler: TRUE
-   modeled_depths: [0.10, 0.33, 0.67,
+   modeled_depths: [0.00, 0.33, 0.67,
                     1.00, 1.33, 1.67,
                     2.00, 2.33, 2.67,
                     3.00, 3.33, 3.67,

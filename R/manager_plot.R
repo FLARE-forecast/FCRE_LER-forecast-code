@@ -129,6 +129,7 @@ manager_plot <- function(file_name,
                         NA)
     }
 
+
     full_time_local_plotting <-seq(full_time_local[1] - lubridate::days(5), max(full_time_local), by = "1 day")
     forecast_index <- which(full_time_local_plotting == full_time_local[which.max(forecast == 0)])
 
