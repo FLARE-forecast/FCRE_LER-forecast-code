@@ -17,7 +17,7 @@ files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 sapply(files.sources, source)
 
 
-models <- c("GLM","GOTM","Simstrat")
+models <- c("GLM", "GOTM","Simstrat")
 #models <- c("GOTM")
 #models <- c("Simstrat")
 config_files <- "configure_flare.yml"
@@ -123,7 +123,14 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file
                                     config = config_obs)
 
 ##` Download NOAA forecasts`
+config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
 
+for(i in 1:length(forecast_start_dates)){
+  noaa_forecast_path <- file.path(config$met$forecast_met_model, config$location$site_id, forecast_start_dates[i], "00")
+  if(length(list.files(file.path(lake_directory,"drivers", noaa_forecast_path))) == 0){
+    FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
+  }
+}
 
 
 available_dates <- list.files(file.path(lake_directory,"drivers","noaa","NOAAGEFS_1hr","fcre"))
@@ -143,12 +150,7 @@ for(k in 1:length(models)){
 
   cycle <- "00"
 
-  for(i in 1:length(forecast_start_dates)){
-    noaa_forecast_path <- file.path(config$met$forecast_met_model, config$location$site_id, forecast_start_dates[i], "00")
-    if(length(list.files(file.path(lake_directory,"drivers", noaa_forecast_path))) == 0){
-      FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
-    }
-  }
+
 
   if(starting_index == 1){
     if(file.exists(file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))){
@@ -185,6 +187,7 @@ for(k in 1:length(models)){
     config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
     config <- FLAREr::get_restart_file(config, lake_directory)
     config$model_settings$model <- model
+    config$da_setup$ensemble_size <- 20
 
     message(paste0("     Running forecast that starts on: ", config$run_config$start_datetime))
 
@@ -270,13 +273,13 @@ for(k in 1:length(models)){
     if(model != "GLM"){ #GOTM and Simstrat have different diagnostics
       config$output_settings$diagnostics_names <- NULL
     }
-    if(model == "Simstrat"){  #Inflows doesn't work for Simstrat but inflows are not turned off for GLM with setting NULL
+    # if(model == "Simstrat"){  #Inflows doesn't work for Simstrat but inflows are not turned off for GLM with setting NULL
       inflow_file_names <- NULL
       outflow_file_names <- NULL
-    }else{
-      inflow_file_names <- inflow_outflow_files$inflow_file_name
-      outflow_file_names <- inflow_outflow_files$outflow_file_name
-    }
+    # }else{
+    #   inflow_file_names <- inflow_outflow_files$inflow_file_name
+    #   outflow_file_names <- inflow_outflow_files$outflow_file_name
+    # }
     #Run EnKF
     da_forecast_output <- FLARErLER::run_da_forecast_ler(states_init = init$states,
                                                          pars_init = init$pars,
