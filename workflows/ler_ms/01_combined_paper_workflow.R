@@ -18,7 +18,7 @@ sapply(files.sources, source)
 
 
 models <- c("GLM","GOTM","Simstrat")
-#models <- c("GOTM")
+models <- c("Simstrat")
 #models <- c("Simstrat")
 config_files <- "configure_flare.yml"
 configure_run_file <- "configure_run.yml"
@@ -27,7 +27,7 @@ config_set_name <- "ler_ms"
 num_forecasts <- 1#52 * 3 - 3
 #num_forecasts <- 1#19 * 7 + 1
 days_between_forecasts <- 7
-forecast_horizon <- 16 #32
+forecast_horizon <- 14 #32
 starting_date <- as_date("2018-07-20")
 #second_date <- as_date("2020-12-01") - days(days_between_forecasts)
 #starting_date <- as_date("2018-07-20")
