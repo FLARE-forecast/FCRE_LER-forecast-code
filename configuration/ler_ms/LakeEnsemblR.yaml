@@ -82,7 +82,7 @@ model_parameters:
         - '''SALT'''
       inflow/inflow_varnum: 3
       output/out_dir: 'output'
-      output/nsave: 1
+      output/nsave: 24
       meteorology/sw_factor: 1.0735
       sediment/benthic_mode: 2
       sediment/sed_heat_model: 1

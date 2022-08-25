@@ -5,6 +5,28 @@ file_path:
    configuration_directory: .na
    execute_directory: .na
    forecast_output_directory: .na
+s3:
+  drivers:
+    endpoint: s3.flare-forecast.org
+    bucket: drivers
+  analysis:
+    endpoint: s3.flare-forecast.org
+    bucket: analysis
+  targets:
+    endpoint: s3.flare-forecast.org
+    bucket: targets
+  forecasts:
+    endpoint: s3.flare-forecast.org
+    bucket: forecasts
+  forecasts_csv:
+    endpoint: s3.flare-forecast.org
+    bucket: forecasts-csv
+  warm_start:
+    endpoint: s3.flare-forecast.org
+    bucket: restart
+  scores:
+    endpoint: s3.flare-forecast.org
+    bucket: scores
 location:
    site_id: fcre
    name: Falling Creek Reservoir
@@ -29,8 +51,8 @@ metadata:
       id: INSERT ORCID
 da_setup:
     da_method: enkf
-    par_fit_method: inflate
-    ensemble_size:  200
+    par_fit_method: perturb_const
+    ensemble_size: 200
     localization_distance: .na #distance in meters were covariances in the model error are used
     no_negative_states: TRUE
     assimilate_first_step: FALSE
@@ -79,7 +101,7 @@ uncertainty:
    met_downscale: TRUE
    inflow_process: TRUE
 output_settings:
-   diagnostics_names:  [extc_coef]
+   diagnostics_names:  [extc]
 management:
    simulate_sss: TRUE
    sss_depth: 8.0

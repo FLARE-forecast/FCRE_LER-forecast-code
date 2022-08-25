@@ -16,22 +16,20 @@ starting_index <- 1
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 sapply(files.sources, source)
 
-
-models <- c("GLM","GOTM","Simstrat")
+models <- c("GLM", "GOTM","Simstrat")
 models <- c("Simstrat")
-#models <- c("Simstrat")
 config_files <- "configure_flare.yml"
 configure_run_file <- "configure_run.yml"
 config_set_name <- "ler_ms"
 
-num_forecasts <- 1#52 * 3 - 3
+num_forecasts <- 10#52 * 3 - 3
 #num_forecasts <- 1#19 * 7 + 1
 days_between_forecasts <- 7
 forecast_horizon <- 14 #32
 starting_date <- as_date("2018-07-20")
 #second_date <- as_date("2020-12-01") - days(days_between_forecasts)
 #starting_date <- as_date("2018-07-20")
-second_date <- as_date("2018-07-31") - days(days_between_forecasts)
+second_date <- as_date("2018-08-10") - days(days_between_forecasts)
 
 start_dates <- rep(NA, num_forecasts)
 start_dates[1:2] <- c(starting_date, second_date)
@@ -123,7 +121,14 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file
                                     config = config_obs)
 
 ##` Download NOAA forecasts`
+config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
 
+for(i in 1:length(forecast_start_dates)){
+  noaa_forecast_path <- file.path(config$met$forecast_met_model, config$location$site_id, forecast_start_dates[i], "00")
+  if(length(list.files(file.path(lake_directory,"drivers", noaa_forecast_path))) == 0){
+    FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path, config)
+  }
+}
 
 
 available_dates <- list.files(file.path(lake_directory,"drivers","noaa","NOAAGEFS_1hr","fcre"))
@@ -143,12 +148,7 @@ for(k in 1:length(models)){
 
   cycle <- "00"
 
-  for(i in 1:length(forecast_start_dates)){
-    noaa_forecast_path <- file.path(config$met$forecast_met_model, config$location$site_id, forecast_start_dates[i], "00")
-    if(length(list.files(file.path(lake_directory,"drivers", noaa_forecast_path))) == 0){
-      FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
-    }
-  }
+
 
   if(starting_index == 1){
     if(file.exists(file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))){
@@ -200,7 +200,7 @@ for(k in 1:length(models)){
                                                              forecast_model = config$inflow$forecast_inflow_model)
 
     if(!is.null(inflow_forecast_path)){
-      FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path)
+      FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path, config)
       inflow_file_dir <- file.path(config$file_path$noaa_directory,inflow_forecast_path)
     }else{
       inflow_file_dir <- NULL
@@ -270,13 +270,13 @@ for(k in 1:length(models)){
     if(model != "GLM"){ #GOTM and Simstrat have different diagnostics
       config$output_settings$diagnostics_names <- NULL
     }
-    if(model == "Simstrat"){  #Inflows doesn't work for Simstrat but inflows are not turned off for GLM with setting NULL
-      inflow_file_names <- NULL
-      outflow_file_names <- NULL
-    }else{
-      inflow_file_names <- inflow_outflow_files$inflow_file_name
-      outflow_file_names <- inflow_outflow_files$outflow_file_name
-    }
+    # if(model == "Simstrat"){  #Inflows doesn't work for Simstrat but inflows are not turned off for GLM with setting NULL
+    inflow_file_names <- NULL
+    outflow_file_names <- NULL
+    # }else{
+    #   inflow_file_names <- inflow_outflow_files$inflow_file_name
+    #   outflow_file_names <- inflow_outflow_files$outflow_file_name
+    # }
     #Run EnKF
     da_forecast_output <- FLARErLER::run_da_forecast_ler(states_init = init$states,
                                                          pars_init = init$pars,
@@ -308,13 +308,19 @@ for(k in 1:length(models)){
                                                 forecast_output_directory = config$file_path$forecast_output_directory,
                                                 use_short_filename = TRUE)
 
-    FLAREr::generate_forecast_score(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
-                                        forecast_file = forecast_file,
-                                        output_directory = config$file_path$forecast_output_directory)
+    message("writing score file")
+    if(config$run_config$forecast_horizon > 0){
+      dir.create(file.path(lake_directory, "scores", config$location$site_id, config$run_config$sim_name), recursive = TRUE, showWarnings = FALSE)
+      score_file <- FLAREr::generate_forecast_score(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
+                                                    forecast_file = forecast_file,
+                                                    output_directory = file.path(lake_directory, "scores", config$location$site_id, config$run_config$sim_name))
+      FLAREr::put_score(saved_file = score_file, config)
+    }
 
+    FLAREr::put_forecast_csv(saved_file = forecast_file, config)
     #Create EML Metadata
-    eml_file_name <- FLAREr::create_flare_metadata(file_name = saved_file,
-                                                   da_forecast_output = da_forecast_output)
+    #eml_file_name <- FLAREr::create_flare_metadata(file_name = saved_file,
+    #                                               da_forecast_output = da_forecast_output)
 
     #rm(da_forecast_output)
     #gc()
@@ -324,7 +330,7 @@ for(k in 1:length(models)){
                                   ncore = 2,
                                   obs_csv = FALSE)
 
-    FLAREr::put_forecast(saved_file, eml_file_name, config)
+    FLAREr::put_forecast(saved_file, eml_file_name = NULL, config)
 
     new_time <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) +
                                lubridate::days(days_between_forecasts))

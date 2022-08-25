@@ -9,8 +9,9 @@ remotes::install_github("FLARE-forecast/GLM3r")
 remotes::install_github("aemon-j/GOTMr", ref = "lake")
 remotes::install_github("tadhg-moore/SimstratR")
 remotes::install_github("aemon-j/gotmtools", ref = "yaml")
-remotes::install_github("USGS-R/glmtools", ref = "ggplot_overhaul")
+remotes::install_github("rqthomas/glmtools")
 remotes::install_github("tadhg-moore/LakeEnsemblR", ref = "flare", force = TRUE)
-remotes::install_github("FLARE-forecast/FLARErLER")
+remotes::install_github("rqthomas/FLAREr")
+remotes::install_github("FLARE-forecast/FLARErLER", force = TRUE)
 
 # end
