@@ -6,4 +6,4 @@ forecast_horizon: 0.0
 sim_name: ms1_ler_flare_Simstrat
 configure_flare: configure_flare.yml
 configure_obs: observation_processing.yml
-use_s3: true
+use_s3: no

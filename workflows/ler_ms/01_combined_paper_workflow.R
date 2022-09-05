@@ -2,10 +2,14 @@ library(tidyverse)
 library(lubridate)
 set.seed(100)
 
+readRenviron("~/.Renviron") # compatible with littler
+
 Sys.setenv('AWS_DEFAULT_REGION' = 's3',
            'AWS_S3_ENDPOINT' = 'flare-forecast.org',
            'USE_HTTPS' = TRUE,
            'TZ' = 'UTC')
+
+
 
 use_s3 <- FALSE
 
@@ -17,12 +21,12 @@ files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 sapply(files.sources, source)
 
 models <- c("GLM", "GOTM","Simstrat")
-models <- c("Simstrat")
+#models <- c("Simstrat")
 config_files <- "configure_flare.yml"
 configure_run_file <- "configure_run.yml"
 config_set_name <- "ler_ms"
 
-num_forecasts <- 10#52 * 3 - 3
+num_forecasts <- 52 #* 3 - 3
 #num_forecasts <- 1#19 * 7 + 1
 days_between_forecasts <- 7
 forecast_horizon <- 14 #32
@@ -123,6 +127,13 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file
 ##` Download NOAA forecasts`
 config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
 
+FLAREr::put_targets(site_id = config_obs$site_id,
+                    cleaned_insitu_file,
+                    cleaned_met_file,
+                    cleaned_inflow_file,
+                    use_s3 = config$run_config$use_s3,
+                    config)
+
 for(i in 1:length(forecast_start_dates)){
   noaa_forecast_path <- file.path(config$met$forecast_met_model, config$location$site_id, forecast_start_dates[i], "00")
   if(length(list.files(file.path(lake_directory,"drivers", noaa_forecast_path))) == 0){
@@ -153,6 +164,12 @@ for(k in 1:length(models)){
   if(starting_index == 1){
     if(file.exists(file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))){
       unlink(file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))
+      if(use_s3){
+      FLAREr::delete_restart(site_id = sites[j],
+                             sim_name = sim_names,
+                             bucket = config$s3$warm_start$bucket,
+                             endpoint = config$s3$warm_start$endpoint)
+      }
     }
     run_config <- yaml::read_yaml(file.path(lake_directory, "configuration", config_set_name, configure_run_file))
     run_config$configure_flare <- config_files[j]
