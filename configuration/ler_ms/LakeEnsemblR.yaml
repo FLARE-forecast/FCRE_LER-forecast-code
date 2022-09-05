@@ -38,7 +38,7 @@ inflows:
 output:
    file: ensemble_output                        # name of output file, excluding extension
    format: netcdf                               # format [text/netcdf]
-   depths: 0.5                                  # depths to extract output [m]
+   depths: 0.25                                  # depths to extract output [m]
    compression: 4                               # set to an integer between 1 (least compression) and 9 (most compression), this enables compression for the variable as it is written to the file
    time_unit: hour                              # time unit [second, hour, day]
    time_step: 1                                # number of time units between output [min=1]
@@ -131,6 +131,7 @@ model_parameters:
       ModelParameters/p_windf: 0.9
       ModelParameters/c10: 0.7
       Simulation/Save text restart: true
+      Simulation/Timestep s: 3600
 calibration:                                    # calibration section
    met:                                         # meteo scaling parameter
       wind_speed:                               # wind speed scaling
