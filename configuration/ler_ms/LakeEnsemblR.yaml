@@ -27,7 +27,7 @@ input:
    meteo:
       file: LakeEnsemblR_meteo_standard.csv     # file with meteorological forcing data, with column headers according to LakeEnsemblR vocabulary [csv file]
    light:
-      Kw: 0.9 # light extinction coefficient [m-1, or csv file]
+      Kw: 0.87 # light extinction coefficient [m-1, or csv file]
    ice:
       use: true                                 # turn on ice models? [true/false]
 inflows:
@@ -54,13 +54,14 @@ scaling_factors:                                # scaling factors to apply to me
       wind_speed: 1.0
       swr: 1.0
    Simstrat:
-      wind_speed: 0.25
-      swr: 0.25
+      wind_speed: 1.0
+      swr: 1.0
 model_parameters:
    FLake:                                       # FLake specific parameters
       LAKE_PARAMS/fetch_lk: 711.699                          # typical wind fetch [m]
    GLM:
       glm_setup/max_layer_thick: 0.33
+      glm_setup/min_layer_thick: 0.15
       glm_setup/max_layers: 500
       time/timezone: -5
       time/dt: 3600
@@ -86,52 +87,68 @@ model_parameters:
       meteorology/sw_factor: 1.0735
       sediment/benthic_mode: 2
       sediment/sed_heat_model: 1
-      sediment/n_zones: 2
+      sediment/n_zones: 4
       sediment/zone_heights:
-         - 5.0
-         - 9.5
+      - 3.0
+      - 5.0
+      - 7.0
+      - 9.5
       sediment/sed_temp_mean:
-         - 10.0
-         - 15.0
+      - 12.0
+      - 12.0
+      - 12.0
+      - 20.0
       sediment/sed_heat_Ksoil:
-         - 1.2
-         - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
+      - 1.2
       sediment/sed_temp_depth:
-         - 0.5
-         - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
       sediment/sed_temp_amplitude:
-         - 0.0
-         - 0.0
+      - 3
+      - 3
+      - 3
+      - 5
       sediment/sed_temp_peak_doy:
-         - 278.4380074
-         - 276.9746504
+      - 278.0
+      - 270.0
+      - 266.0
+      - 266.0
       init_profiles/restart_variables:
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
-         - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
    GOTM:                                        # GOTM specific parameters
-      turbulence/turb_param/k_min: 5.0E-8                             # minimum turbulent kinetic energy [m^2/s^2; min=0.0]
+    turbulence/turb_param/k_min: 5.0E-8                             # minimum turbulent kinetic energy [m^2/s^2; min=0.0]
    Simstrat:                                    # Simstrat specific parameters
-      ModelParameters/a_seiche: 0.0006
-      ModelParameters/k_min: 0.0000000001
-      ModelParameters/p_windf: 0.9
-      ModelParameters/c10: 0.7
-      Simulation/Save text restart: true
-      Simulation/Timestep s: 3600
+    ModelParameters/a_seiche: 0.01
+    ModelParameters/q_nn: 1.0
+    ModelParameters/p_lw: 1.0
+    ModelParameters/freez_temp: 0.05
+    ModelParameters/k_min: 1.0e-15
+    ModelParameters/p_windf: 1.0
+    ModelParameters/c10: 1.0
+    Simulation/Save text restart: true
+    Simulation/Timestep s: 3600.0
+    ModelParameters/p_sw_water: 1.0
 calibration:                                    # calibration section
    met:                                         # meteo scaling parameter
       wind_speed:                               # wind speed scaling

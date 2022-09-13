@@ -11,22 +11,22 @@ s3:
     bucket: drivers
   analysis:
     endpoint: s3.flare-forecast.org
-    bucket: analysis
+    bucket: analysis/ler_ms
   targets:
     endpoint: s3.flare-forecast.org
-    bucket: targets/ler
+    bucket: targets/ler_ms
   forecasts:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts
+    bucket: forecasts/ler_ms
   forecasts_csv:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts-csv
+    bucket: forecasts-csv/ler_ms
   warm_start:
     endpoint: s3.flare-forecast.org
-    bucket: restart
+    bucket: restart/ler_ms
   scores:
     endpoint: s3.flare-forecast.org
-    bucket: scores
+    bucket: scores/ler_ms
 location:
    site_id: fcre
    name: Falling Creek Reservoir
@@ -51,7 +51,7 @@ metadata:
       id: INSERT ORCID
 da_setup:
     da_method: enkf
-    par_fit_method: perturb_const
+    par_fit_method: inflate
     ensemble_size: 200
     localization_distance: .na #distance in meters were covariances in the model error are used
     no_negative_states: TRUE
