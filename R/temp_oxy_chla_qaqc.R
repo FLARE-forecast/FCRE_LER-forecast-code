@@ -288,6 +288,11 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                      doobs_5 = d2$RDO_mgL_5, doobs_9 = d2$RDO_mgL_9,
                      fDOM_1 = d2$EXOfDOM_QSU_1, bgapc_1 = d2$EXOBGAPC_ugL_1,
                      depth_1.6 = d2$EXO_depth, Depth_m = d2$Depth_m, salt = d2$salt)
+d4 %>%
+  filter(year(TIMESTAMP) == 2021) %>%
+  ggplot(aes(x = TIMESTAMP, y = wtr_4)) +
+  geom_point()
+
 
     d <- rbind(d3,d4)
 
@@ -602,6 +607,12 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     rename(time = timestamp)
 
   d <- d %>% mutate(depth = as.numeric(depth))
+
+  d %>%
+    filter(depth %in% c(1,4,9),
+           variable == "temperature") %>%
+    ggplot(aes(x = time, y = observed, color = depth)) +
+    geom_point()
 
   # write to output file
   return(d)

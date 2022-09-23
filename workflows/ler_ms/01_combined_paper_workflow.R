@@ -13,7 +13,7 @@ use_s3 <- TRUE
 
 lake_directory <- here::here()
 
-starting_index <- 19
+starting_index <- 2
 #Pick up on 25
 
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
@@ -21,15 +21,15 @@ sapply(files.sources, source)
 
 models <- c("GLM", "GOTM","Simstrat")
 #models <- c("GOTM","Simstrat")
-#models <- c("GOTM")
+models <- c("GLM")
 config_files <- "configure_flare.yml"
 configure_run_file <- "configure_run.yml"
 config_set_name <- "ler_ms"
 
-num_forecasts <- 104   #52 #* 3 - 3
+num_forecasts <- 52*2 #* 3 - 3
 #num_forecasts <- 1#19 * 7 + 1
 days_between_forecasts <- 7
-forecast_horizon <- 34 #32
+forecast_horizon <- 14
 starting_date <- as_date("2020-09-25")
 #second_date <- as_date("2020-12-01") - days(days_between_forecasts)
 #starting_date <- as_date("2018-07-20")
@@ -79,7 +79,7 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
                      file = config_obs$met_raw_obs_fname[2],
                      lake_directory)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/5/c1b1f16b8e3edbbff15444824b65fe8f",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/6/23a191c1870a5b18cbc17f2779f719cf",
                      file = config_obs$insitu_obs_fname[2],
                      lake_directory)
 
@@ -124,7 +124,7 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file
                                     config = config_obs)
 
 ##` Download NOAA forecasts`
-config <- FLAREr::set_configuration(configure_run_file = configure_run_file, lake_directory = lake_directory, config_set_name = config_set_name, sim_name = model[1])
+config <- FLAREr::set_configuration(configure_run_file = configure_run_file, lake_directory = lake_directory, config_set_name = config_set_name, sim_name = models[1])
 
 FLAREr::put_targets(site_id = config_obs$site_id,
                     cleaned_insitu_file,
@@ -163,7 +163,7 @@ sims <- sims |>
   distinct_all() |>
   arrange(start_dates)
 
-sims$horizon[19:21] <- 0
+#sims$horizon[19:21] <- 0
 
 
 for(i in starting_index:nrow(sims)){
@@ -354,8 +354,7 @@ for(i in starting_index:nrow(sims)){
   #eml_file_name <- FLAREr::create_flare_metadata(file_name = saved_file,
   #                                               da_forecast_output = da_forecast_output)
 
-  #rm(da_forecast_output)
-  #gc()
+
   message("Generating plot")
   FLAREr::plotting_general_2(file_name = saved_file,
                              target_file = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
@@ -364,8 +363,12 @@ for(i in starting_index:nrow(sims)){
 
   FLAREr::put_forecast(saved_file, eml_file_name = NULL, config)
 
-  new_time <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) +
-                             lubridate::days(days_between_forecasts))
+  unlink(saved_file)
+
+  rm(da_forecast_output)
+  gc()
+
+
 
   #if(i <= (nrow(sims) - 3)){
   #  FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = sims$horizon[i + 3], day_advance = days_between_forecasts)
