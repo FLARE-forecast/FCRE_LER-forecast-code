@@ -13,7 +13,7 @@ use_s3 <- TRUE
 
 lake_directory <- here::here()
 
-starting_index <- 1
+starting_index <- 2
 #Pick up on 25
 
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
