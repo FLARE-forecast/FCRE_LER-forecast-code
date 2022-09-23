@@ -1,9 +1,9 @@
-restart_file: fcre-2021-02-14-GLM.nc
-start_datetime: 2021-02-14 00:00:00
+restart_file: fcre-2021-07-18-Simstrat.nc
+start_datetime: 2021-07-18 00:00:00
 end_datetime: .na
-forecast_start_datetime: 2021-02-21 00:00:00
+forecast_start_datetime: 2021-07-25 00:00:00
 forecast_horizon: '34'
-sim_name: GLM
+sim_name: Simstrat
 configure_flare: configure_flare.yml
 configure_obs: observation_processing.yml
 use_s3: yes
