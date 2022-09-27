@@ -13,7 +13,7 @@ use_s3 <- TRUE
 
 lake_directory <- here::here()
 
-starting_index <- 2
+starting_index <- 65
 #Pick up on 25
 
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
@@ -21,7 +21,7 @@ sapply(files.sources, source)
 
 models <- c("GLM", "GOTM","Simstrat")
 #models <- c("GOTM","Simstrat")
-models <- c("GLM")
+#models <- c("GLM")
 config_files <- "configure_flare.yml"
 configure_run_file <- "configure_run.yml"
 config_set_name <- "ler_ms"
@@ -163,10 +163,14 @@ sims <- sims |>
   distinct_all() |>
   arrange(start_dates)
 
-#sims$horizon[19:21] <- 0
+sims$horizon[19:21] <- 0
 
 
 for(i in starting_index:nrow(sims)){
+
+  if(i < 71 & sims$model[i] != "Simstrat"){
+    #Don't do anything
+  }else{
 
   message(paste0("index: ", i))
   message(paste0("     Running model: ", sims$model[i]))
@@ -365,12 +369,10 @@ for(i in starting_index:nrow(sims)){
 
   unlink(saved_file)
 
+  unlink(config$run_config$restart_file)
+
   rm(da_forecast_output)
   gc()
+  }
 
-
-
-  #if(i <= (nrow(sims) - 3)){
-  #  FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = sims$horizon[i + 3], day_advance = days_between_forecasts)
-  #}
 }

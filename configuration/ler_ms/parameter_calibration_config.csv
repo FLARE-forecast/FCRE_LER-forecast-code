@@ -1,4 +1,4 @@
 par_names,par_names_save,par_file,par_init,par_init_lowerbound,par_init_upperbound,par_lowerbound,par_upperbound,inflat_pars,perturb_par,par_units,model
-meteorology/sw_factor,sw_factor,glm3.nml,1,0.5,1.5,0.1,2,1.04,0.015,unitless,GLM
-surface/meteo/swr/scale_factor,swr_scale_factor,gotm.yaml,1.00E+00,5.00E-01,1.50E+00,1.00E-01,2.00E+00,1.04E+00,0.015,unitless,GOTM
-ModelParameters/p_sw_water,p_sw_water,simstrat.par,1,0.5,1.5,0.1,2,1.04,0.015,unitless,Simstrat
+meteorology/sw_factor,sw_factor,glm3.nml,1,0.9,1.1,0.1,2,1.04,0.025,unitless,GLM
+surface/meteo/swr/scale_factor,swr_scale_factor,gotm.yaml,1.00E+00,0.9,1.1,1.00E-01,2.00E+00,1.04E+00,0.025,unitless,GOTM
+ModelParameters/p_sw_water,p_sw_water,simstrat.par,1,0.9,1.1,0.1,2,1.04,0.025,unitless,Simstrat

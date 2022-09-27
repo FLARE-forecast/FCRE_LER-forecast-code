@@ -1,9 +1,9 @@
-restart_file: .na
-start_datetime: 2020-10-25 00:00:00
+restart_file: fcre-2021-03-28-GOTM.nc
+start_datetime: 2021-03-28 00:00:00
 end_datetime: .na
-forecast_start_datetime: 2020-11-01 00:00:00
+forecast_start_datetime: 2021-04-04 00:00:00
 forecast_horizon: '14'
-sim_name: GLM
+sim_name: GOTM
 configure_flare: configure_flare.yml
 configure_obs: observation_processing.yml
 use_s3: yes
