@@ -87,37 +87,25 @@ model_parameters:
       meteorology/sw_factor: 1.0735
       sediment/benthic_mode: 2
       sediment/sed_heat_model: 1
-      sediment/n_zones: 4
+      sediment/n_zones: 2
       sediment/zone_heights:
-      - 3.0
       - 5.0
-      - 7.0
       - 9.5
       sediment/sed_temp_mean:
-      - 12.0
-      - 12.0
       - 12.0
       - 20.0
       sediment/sed_heat_Ksoil:
       - 1.2
       - 1.2
-      - 1.2
-      - 1.2
       sediment/sed_temp_depth:
       - 0.5
       - 0.5
-      - 0.5
-      - 0.5
       sediment/sed_temp_amplitude:
-      - 3
-      - 3
-      - 3
-      - 5
+      - 0
+      - 0
       sediment/sed_temp_peak_doy:
       - 278.0
       - 270.0
-      - 266.0
-      - 266.0
       init_profiles/restart_variables:
       - 0
       - 0

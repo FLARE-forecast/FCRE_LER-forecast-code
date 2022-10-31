@@ -172,7 +172,7 @@ for(i in starting_index:nrow(sims)){
   message(paste0("     Running model: ", sims$model[i]))
 
   model <- sims$model[i]
-  sim_names <- paste0( model)
+  sim_names <- paste0(model)
 
   config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name, sim_name = sim_names)
 
