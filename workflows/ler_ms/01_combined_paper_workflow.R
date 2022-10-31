@@ -13,7 +13,7 @@ use_s3 <- TRUE
 
 lake_directory <- here::here()
 
-starting_index <- 1
+starting_index <- 2
 #Pick up on 25
 
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
@@ -21,7 +21,7 @@ sapply(files.sources, source)
 
 models <- c("GLM", "GOTM","Simstrat")
 #models <- c("GOTM","Simstrat")
-#models <- c("GLM")
+models <- c("GLM")
 config_files <- c("configure_flare_GLM.yml","configure_flare.yml","configure_flare.yml")
 configure_run_file <- "configure_run.yml"
 config_set_name <- "ler_ms"
