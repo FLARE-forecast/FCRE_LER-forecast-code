@@ -127,16 +127,21 @@ model_parameters:
    GOTM:                                        # GOTM specific parameters
     turbulence/turb_param/k_min: 5.0E-8                             # minimum turbulent kinetic energy [m^2/s^2; min=0.0]
    Simstrat:                                    # Simstrat specific parameters
-    ModelParameters/a_seiche: 0.01
-    ModelParameters/q_nn: 1.0
+    ModelParameters/a_seiche: 0.0027906391
+    ModelParameters/q_nn: 1.1
     ModelParameters/p_lw: 1.0
-    ModelParameters/freez_temp: 0.05
+    ModelParameters/f_wind: 0.352704769
+    ModelParameters/freez_temp: 0.01
     ModelParameters/k_min: 1.0e-15
     ModelParameters/p_windf: 1.0
     ModelParameters/c10: 1.0
-    Simulation/Save text restart: true
-    Simulation/Timestep s: 3600.0
     ModelParameters/p_sw_water: 1.0
+    ModelParameters/snow_temp: 1.39796129
+    ModelParameters/wat_albedo: 0.09
+    ModelParameters/beta_sol: 0.35
+    Simulation/Save text restart: true
+    Simulation/Timestep s: 300.0
+
 calibration:                                    # calibration section
    met:                                         # meteo scaling parameter
       wind_speed:                               # wind speed scaling

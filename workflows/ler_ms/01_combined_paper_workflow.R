@@ -13,7 +13,7 @@ use_s3 <- TRUE
 
 lake_directory <- here::here()
 
-starting_index <- 2
+starting_index <- 1
 #Pick up on 25
 
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
@@ -21,8 +21,8 @@ sapply(files.sources, source)
 
 models <- c("GLM", "GOTM","Simstrat")
 #models <- c("GOTM","Simstrat")
-models <- c("GLM")
-config_files <- "configure_flare.yml"
+#models <- c("GLM")
+config_files <- c("configure_flare_GLM.yml","configure_flare.yml","configure_flare.yml")
 configure_run_file <- "configure_run.yml"
 config_set_name <- "ler_ms"
 
@@ -65,9 +65,9 @@ FLAREr::get_git_repo(lake_directory,
                      directory = config_obs$realtime_met_station_location,
                      git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
-FLAREr::get_git_repo(lake_directory,
-                     directory = config_obs$realtime_inflow_data_location,
-                     git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+#FLAREr::get_git_repo(lake_directory,
+#                     directory = config_obs$realtime_inflow_data_location,
+#                     git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
 #get_git_repo(lake_directory,
 #             directory = config_obs$manual_data_location,
@@ -102,13 +102,13 @@ cleaned_met_file <- met_qaqc(realtime_file = file.path(config_obs$file_path$data
 
 #' Clean up observed inflow
 
-cleaned_inflow_file <- inflow_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[1]),
-                                   qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[2]),
-                                   nutrients_file = NA,
-                                   silica_file = NA,
-                                   co2_ch4 = NA,
-                                   cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id, paste0(config_obs$site_id,"-targets-inflow.csv")),
-                                   input_file_tz = 'EST')
+#cleaned_inflow_file <- inflow_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[1]),
+#                                   qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_raw_file1[2]),
+#                                   nutrients_file = NA,
+#                                   silica_file = NA,
+#                                   co2_ch4 = NA,
+#                                   cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, config_obs$site_id, paste0(config_obs$site_id,"-targets-inflow.csv")),
+#                                   input_file_tz = 'EST')
 
 #' Clean up observed insitu measurements
 
@@ -129,7 +129,7 @@ config <- FLAREr::set_configuration(configure_run_file = configure_run_file, lak
 FLAREr::put_targets(site_id = config_obs$site_id,
                     cleaned_insitu_file,
                     cleaned_met_file,
-                    cleaned_inflow_file,
+                    cleaned_inflow_file = NA,
                     use_s3 = config$run_config$use_s3,
                     config)
 
@@ -163,16 +163,17 @@ sims <- sims |>
   distinct_all() |>
   arrange(start_dates)
 
-#sims$horizon[19:21] <- 0
+sims$horizon[19:21] <- 0
 
 
 for(i in starting_index:nrow(sims)){
+
 
   message(paste0("index: ", i))
   message(paste0("     Running model: ", sims$model[i]))
 
   model <- sims$model[i]
-  sim_names <- paste0(model)
+  sim_names <- paste0(model,"_2")
 
   config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name, sim_name = sim_names)
 
@@ -188,7 +189,7 @@ for(i in starting_index:nrow(sims)){
       }
     }
     run_config <- yaml::read_yaml(file.path(lake_directory, "configuration", config_set_name, configure_run_file))
-    run_config$configure_flare <- config_files[j]
+    run_config$configure_flare <- config_files[which(models == sims$model[i])]
     run_config$sim_name <- sim_names
     yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", config_set_name, configure_run_file))
     config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
@@ -222,9 +223,11 @@ for(i in starting_index:nrow(sims)){
     forecast_dir <- NULL
   }
 
-  inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
-                                                           forecast_model = config$inflow$forecast_inflow_model)
+  #inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
+  #                                                         forecast_model = config$inflow$forecast_inflow_model)
+  #
 
+  inflow_forecast_path <- NULL
   if(!is.null(inflow_forecast_path)){
     FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path, config)
     inflow_file_dir <- file.path(config$file_path$noaa_directory,inflow_forecast_path)
@@ -238,20 +241,20 @@ for(i in starting_index:nrow(sims)){
   config$future_inflow_temp_coeff <- c(0.20291, 0.94214, 0.04278)
   config$future_inflow_temp_error <- 0.943
 
-  if(!is.null(forecast_dir) > 0){
-    forecast_files <- list.files(file.path(lake_directory, "drivers", noaa_forecast_path), full.names = TRUE)
-    temp_flow_forecast <- forecast_inflows_outflows(inflow_obs = file.path(config$file_path$qaqc_data_directory, "fcre-targets-inflow.csv"),
-                                                    forecast_files = forecast_files,
-                                                    obs_met_file = file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc"),
-                                                    output_dir = config$file_path$inflow_directory,
-                                                    inflow_model = config$inflow$forecast_inflow_model,
-                                                    inflow_process_uncertainty = FALSE,
-                                                    forecast_location = config$file_path$forecast_output_directory,
-                                                    config = config,
-                                                    use_s3 = config$run_config$use_s3,
-                                                    bucket = "drivers",
-                                                    model_name = "glm")
-  }
+  #if(!is.null(forecast_dir) > 0){
+  #  forecast_files <- list.files(file.path(lake_directory, "drivers", noaa_forecast_path), full.names = TRUE)
+  #  temp_flow_forecast <- forecast_inflows_outflows(inflow_obs = file.path(config$file_path$qaqc_data_directory, "fcre-targets-inflow.csv"),
+  #                                                  forecast_files = forecast_files,
+  #                                                  obs_met_file = file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc"),
+  #                                                  output_dir = config$file_path$inflow_directory,
+  #                                                  inflow_model = config$inflow$forecast_inflow_model,
+  #                                                  inflow_process_uncertainty = FALSE,
+  #                                                  forecast_location = config$file_path$forecast_output_directory,
+  #                                                  config = config,
+  #                                                  use_s3 = config$run_config$use_s3,
+  #                                                  bucket = "drivers",
+  #                                                  model_name = "glm")
+  #}
 
   #Need to remove the 00 ensemble member because it only goes 16-days in the future
 
@@ -262,10 +265,17 @@ for(i in starting_index:nrow(sims)){
 
   FLAREr::get_stacked_noaa(lake_directory, config, averaged = TRUE)
 
-  met_out <- FLARErLER::generate_met_files_ler(obs_met_file = file.path(config$file_path$noaa_directory, "noaa", "NOAAGEFS_1hr_stacked_average", config$location$site_id, paste0("observed-met-noaa_",config$location$site_id,".nc")),
+  if(sims$model[i] != "GLM"){
+    met_out <- FLARErLER::generate_met_files_ler(obs_met_file = file.path(config$file_path$noaa_directory, "noaa", "NOAAGEFS_1hr_stacked_average", config$location$site_id, paste0("observed-met-noaa_",config$location$site_id,".nc")),
                                                out_dir = config$file_path$execute_directory,
                                                forecast_dir = forecast_dir,
                                                config = config)
+  }else{
+    met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$noaa_directory, "noaa", "NOAAGEFS_1hr_stacked_average", config$location$site_id, paste0("observed-met-noaa_",config$location$site_id,".nc")),
+                                                 out_dir = config$file_path$execute_directory,
+                                                 forecast_dir = forecast_dir,
+                                                 config = config)
+  }
 
   #Download and process observations (already done)
 
@@ -276,11 +286,11 @@ for(i in starting_index:nrow(sims)){
 
   met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
 
-  inflow_outflow_files <- FLARErLER::create_inflow_outflow_files_ler(inflow_file_dir = inflow_file_dir,
-                                                                     inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),
-                                                                     working_directory = config$file_path$execute_directory,
-                                                                     config = config,
-                                                                     state_names = states_config$state_names)
+  #inflow_outflow_files <- FLARErLER::create_inflow_outflow_files_ler(inflow_file_dir = inflow_file_dir,
+  #                                                                   inflow_obs = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-inflow.csv")),
+  #                                                                   working_directory = config$file_path$execute_directory,
+  #                                                                   config = config,
+  #                                                                   state_names = states_config$state_names)
 
   #Create observation matrix
   obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
@@ -293,12 +303,21 @@ for(i in starting_index:nrow(sims)){
 
   model_sd <- FLAREr::initiate_model_error(config, states_config)
 
+  if(sims$model[i] != "GLM"){
   init <- FLARErLER::generate_initial_conditions_ler(states_config,
                                                      obs_config,
                                                      pars_config,
                                                      obs,
                                                      config,
                                                      historical_met_error = met_out$historical_met_error)
+  }else{
+    init <- FLAREr::generate_initial_conditions(states_config,
+                                                       obs_config,
+                                                       pars_config,
+                                                       obs,
+                                                       config,
+                                                       historical_met_error = met_out$historical_met_error)
+  }
   if(model != "GLM"){ #GOTM and Simstrat have different diagnostics
     config$output_settings$diagnostics_names <- NULL
   }
@@ -310,6 +329,7 @@ for(i in starting_index:nrow(sims)){
   #   outflow_file_names <- inflow_outflow_files$outflow_file_name
   # }
   #Run EnKF
+  if(sims$model[i] != "GLM"){
   da_forecast_output <- FLARErLER::run_da_forecast_ler(states_init = init$states,
                                                        pars_init = init$pars,
                                                        aux_states_init = init$aux_states_init,
@@ -328,9 +348,30 @@ for(i in starting_index:nrow(sims)){
                                                        da_method = config$da_setup$da_method,
                                                        par_fit_method = config$da_setup$par_fit_method,
                                                        debug = TRUE)
+  }else{
+    config$model_settings$model_name <- "GLM"
+    da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
+                                                         pars_init = init$pars,
+                                                         aux_states_init = init$aux_states_init,
+                                                         obs = obs,
+                                                         obs_sd = obs_config$obs_sd,
+                                                         model_sd = model_sd,
+                                                         working_directory = config$file_path$execute_directory,
+                                                         met_file_names = met_out$filenames,
+                                                         inflow_file_names = inflow_file_names,
+                                                         outflow_file_names = outflow_file_names,
+                                                         config = config,
+                                                         pars_config = pars_config,
+                                                         states_config = states_config,
+                                                         obs_config = obs_config,
+                                                         management = NULL,
+                                                         da_method = config$da_setup$da_method,
+                                                         par_fit_method = config$da_setup$par_fit_method,
+                                                         debug = TRUE)
+  }
 
   # Save forecast
-
+  if(sims$model[i] != "GLM"){
   #saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
   saved_file <- FLARErLER::write_forecast_netcdf_ler(da_forecast_output = da_forecast_output,
                                                      forecast_output_directory = config$file_path$forecast_output_directory,
@@ -339,6 +380,15 @@ for(i in starting_index:nrow(sims)){
   forecast_file <- FLARErLER::write_forecast_csv_ler(da_forecast_output = da_forecast_output,
                                                      forecast_output_directory = config$file_path$forecast_output_directory,
                                                      use_short_filename = TRUE)
+  }else{
+    saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
+                                                       forecast_output_directory = config$file_path$forecast_output_directory,
+                                                       use_short_filename = TRUE)
+
+    forecast_file <- FLAREr::write_forecast_csv(da_forecast_output = da_forecast_output,
+                                                       forecast_output_directory = config$file_path$forecast_output_directory,
+                                                       use_short_filename = TRUE)
+  }
 
   message("writing score file")
   if(config$run_config$forecast_horizon > 0){
@@ -365,12 +415,9 @@ for(i in starting_index:nrow(sims)){
 
   unlink(saved_file)
 
+  unlink(config$run_config$restart_file)
+
   rm(da_forecast_output)
   gc()
 
-
-
-  #if(i <= (nrow(sims) - 3)){
-  #  FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = sims$horizon[i + 3], day_advance = days_between_forecasts)
-  #}
 }
